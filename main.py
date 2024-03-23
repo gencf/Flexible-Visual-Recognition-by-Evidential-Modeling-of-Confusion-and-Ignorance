@@ -167,8 +167,9 @@ def train(epoch):
         f.write('\n')
 
 
+# Test the model on the test set
 def test(epoch):
-    global best_acc
+    global best_acc, best_acc_epoch, stop_training
     net.eval()
     test_loss = 0
     correct = 0
@@ -187,20 +188,52 @@ def test(epoch):
             progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
                          % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
-    # Save checkpoint.
-    acc = 100.*correct/total
-    if acc > best_acc:
-        print('Saving..')
+    if args.mode == 'train':
+        acc = 100.*correct/total
+        
+        # Save best model if the current model has better accuracy.
+        if acc > best_acc:
+            print('Saving best model..')
+            best_acc = acc
+            best_acc_epoch = epoch
+            state = {
+                'net': net.state_dict(),
+                'acc': acc,
+                'epoch': epoch,
+                'best_acc': best_acc,
+                'best_acc_epoch': best_acc_epoch
+            }
+            torch.save(state, os.path.join(save_path, 'best.pth'))
+
+        # Save checkpoint.
         state = {
             'net': net.state_dict(),
             'acc': acc,
             'epoch': epoch,
+            'best_acc': best_acc,
+            'best_acc_epoch': best_acc_epoch
         }
-        if not os.path.isdir('checkpoint'):
-            os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/ckpt.pth')
-        best_acc = acc
+        torch.save(state, os.path.join(save_path, 'last.pth'))
 
+        # After 200 epochs, if there is no improvement in the last 25% of the epochs, stop training
+        if epoch >= 200 and best_acc_epoch < epoch*0.75:
+            stop_training = True
+            print('Stopping at epoch %d' % epoch)
+
+        # # If accuracy is exactly 50%, stop training because it may result in a collapsed model (f(x) = 0)
+        # if acc == 50.0:
+        #     stop_training = True
+        #     print('Collapsed model (f(x) = 0). Stopping at epoch %d' % epoch)
+    
+    s = 'Test Epoch: %d | Loss: %.3f | Acc: %.3f%% (%d/%d)\n' \
+            % (epoch, test_loss/(batch_idx+1), 100.*correct/total, correct, total)
+        
+    s += 'Best Acc: %.3f%% at Epoch %d\n' % (best_acc, best_acc_epoch)
+
+    print(s)
+    with open(os.path.join(save_path, 'test_log.txt'), 'a') as f:
+        f.write(s)
+        f.write('\n')
 
 for epoch in range(start_epoch, start_epoch+200):
     train(epoch)
