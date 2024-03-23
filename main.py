@@ -83,6 +83,26 @@ if dataset == 'CIFAR10':
     
     num_classes = 10
 
+# Use CIFAR100 classes
+elif dataset == 'CIFAR100':
+    # Mean and std for CIFAR100
+    mean = (0.5071, 0.4867, 0.4408)
+    std = (0.2675, 0.2565, 0.2761)
+
+    transform_train, transform_test = get_transforms(mean, std)
+
+    trainset = torchvision.datasets.CIFAR100(
+        root='./data', train=True, download=True, transform=transform_train)
+
+    testset = torchvision.datasets.CIFAR100(
+        root='./data', train=False, download=True, transform=transform_test)
+    
+    num_classes = 100
+    
+else:
+    raise ValueError('Invalid dataset')
+
+
 # Model
 print('==> Building model..')
 
