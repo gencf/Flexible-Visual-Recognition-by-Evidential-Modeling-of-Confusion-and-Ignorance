@@ -16,14 +16,29 @@ from utils import progress_bar
 
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
-parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
-parser.add_argument('--resume', '-r', action='store_true',
-                    help='resume from checkpoint')
+parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
+parser.add_argument('--loss', default='CrossEntropyLoss', type=str, help='loss function')
+parser.add_argument('--mode' , default='train', type=str, help='train or test')
+parser.add_argument('--max_num_epochs', default=1000, type=int, help='max number of epochs')
+parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
+parser.add_argument('--save_path', default='results/exp1/CrossEntropyLoss', type=str, help='save path')
+parser.add_argument('--model_path', default='results/exp1/CrossEntropyLoss/best.pth', type=str, help='model path')
+parser.add_argument('--embedding_size', default=64, type=int, help='embedding size')
+parser.add_argument('--dataset', default='CIFAR10', type=str, help='dataset')
 args = parser.parse_args()
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc = 0  # best test accuracy
+best_acc_epoch = 0 # best test accuracy epoch
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
+save_path = args.save_path
+model_path = args.model_path
+embedding_size = args.embedding_size
+dataset = args.dataset
+
+print('Save path: {}'.format(save_path))
+print('Embedding size: {}'.format(embedding_size))
+print('Dataset: {}'.format(dataset))
 
 # Data
 print('==> Preparing data..')
