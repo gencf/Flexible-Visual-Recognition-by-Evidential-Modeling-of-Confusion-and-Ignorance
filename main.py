@@ -10,6 +10,7 @@ import torchvision.transforms as transforms
 
 import os
 import argparse
+import numpy as np
 
 from models import *
 from utils import progress_bar
@@ -125,10 +126,12 @@ optimizer = optim.SGD(net.parameters(), lr=args.lr,
                       momentum=0.9, weight_decay=5e-4)
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
+stop_training = False
 
 # Training
 def train(epoch):
-    print('\nEpoch: %d' % epoch)
+    global stop_training
+    print('\nTraining Epoch: %d' % epoch)
     net.train()
     train_loss = 0
     correct = 0
@@ -138,6 +141,12 @@ def train(epoch):
         optimizer.zero_grad()
         outputs = net(inputs)
         loss = criterion(outputs, targets)
+        # If loss becomes NaN, stop training
+        if np.isnan(loss.item()):
+            stop_training = True
+            print("Loss is NaN. Stopping training..")
+            break
+
         loss.backward()
         optimizer.step()
 
