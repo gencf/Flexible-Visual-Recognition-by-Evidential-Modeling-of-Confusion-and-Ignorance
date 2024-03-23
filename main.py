@@ -101,16 +101,26 @@ if device == 'cuda':
     net = torch.nn.DataParallel(net)
     cudnn.benchmark = True
 
-if args.resume:
+if args.mode == 'train' and args.resume:
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
-    assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
-    checkpoint = torch.load('./checkpoint/ckpt.pth')
+    checkpoint = torch.load(model_path)
     net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
+    acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
+    best_acc = checkpoint['best_acc']
+    best_acc_epoch = checkpoint['best_acc_epoch']
 
+if args.mode == 'test':
+    # Load checkpoint.
+    print('==> Testing..')
+    checkpoint = torch.load(model_path)
+    net.load_state_dict(checkpoint['net'])
+    epoch = checkpoint['epoch']
+    best_acc = checkpoint['best_acc']
+    best_acc_epoch = checkpoint['best_acc_epoch']
 
+# criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=args.lr,
                       momentum=0.9, weight_decay=5e-4)
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
