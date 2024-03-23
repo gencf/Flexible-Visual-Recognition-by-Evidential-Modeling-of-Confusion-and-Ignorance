@@ -235,7 +235,34 @@ def test(epoch):
         f.write(s)
         f.write('\n')
 
-for epoch in range(start_epoch, start_epoch+200):
-    train(epoch)
+
+if args.mode == 'train':
+    max_num_epochs = args.max_num_epochs
+    print('==> Training starts..')
+    s = 'Model: {}\n'.format(net)                                               
+    s += 'Loss: {}\n'.format(criterion)
+    s += 'Max Epochs: {}\n'.format(max_num_epochs)
+    s += 'Learning Rate: {}\n'.format(args.lr)
+    s += 'Dataset: {}\n'.format(dataset)
+    s += 'Number of classes: {}\n'.format(num_classes)
+
+    print(s)
+
+    with open(os.path.join(save_path, 'train_log.txt'), 'w') as f:
+        f.write(s)
+        f.write('\n')
+
+    with open(os.path.join(save_path, 'test_log.txt'), 'w') as f:
+        f.write(s)
+        f.write('\n')
+
+    for epoch in range(start_epoch, start_epoch + max_num_epochs + 1):
+        train(epoch)
+        test(epoch)
+        scheduler.step()
+
+        if stop_training:
+            break
+
+elif args.mode == 'test':
     test(epoch)
-    scheduler.step()
