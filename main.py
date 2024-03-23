@@ -158,6 +158,14 @@ def train(epoch):
         progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
                      % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
+    s = 'Train Epoch: %d | Loss: %.3f | Acc: %.3f%% (%d/%d)' \
+            % (epoch, train_loss/(batch_idx+1), 100.*correct/total, correct, total)
+
+    print(s)
+    with open(os.path.join(save_path, 'train_log.txt'), 'a') as f:
+        f.write(s)
+        f.write('\n')
+
 
 def test(epoch):
     global best_acc
