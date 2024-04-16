@@ -19,20 +19,18 @@ The original method proposed in the paper is a novel approach to handle uncertai
 The method focuses on two types of uncertainties:
 
 1. **Confusion**: This type of uncertainty arises when the system finds it challenging to make a clear distinction between known classes. For instance, an image might contain features that match multiple known classes, making it difficult for the system to confidently assign it to one specific class. The overall confusion $C$ is the total mass of the non-singleton subsets. In other words, the confusion $C$ is the sum of masses shared between two or more classes. This is represented as:
-$
-C = \sum_{A, A \in 2^{\Theta}, 2 \leq |A| \leq K} b_A
-$
+
+$$C = \sum_{A, A \in 2^{\Theta}, 2 \leq |A| \leq K} b_A$$
 
 2. **Ignorance**: This type of uncertainty comes into play when the system encounters an input that is entirely outside its training distribution. In such cases, the system lacks any relevant evidence to base a decision on, leading to high ignorance. The ignorance $I$ could be calculated similarly as:
-$
-I = \prod_{j=1}^{K} (1 - pl_j) = \prod_{j=1}^{K} f_{j}^{2}(x)
-$
+
+$$I = \prod_{j=1}^{K} (1 - pl_j) = \prod_{j=1}^{K} f_{j}^{2}(x)$$
+
 and the total confusion between all different class combinations is $C = U - I$.
 
 The uncertainty $U$ for each sample $x$ comes from two distinct sources, i.e., confusion $C$ and ignorance $I$. This is represented as:
-$
-U_x = C_x + I_x
-$
+
+$$U_x = C_x + I_x$$
 
 To model these uncertainties, the method predicts Dirichlet concentration parameters for singletons. In the context of Subjective Logic, a singleton is a set with only one element. These predictions allow the system to form what the authors call “subjective opinions”.
 
@@ -47,14 +45,12 @@ In terms of methodology, the paper uses the theory of Subjective Logic to model 
 The paper proposes to decompose the problem into $K$ plausibility functions $f_i(\cdot)$ for $i = 1, . . . , K$ on the same frame. Each plausibility function $f_i(\cdot)$ is designed to give two predictions only considering class $i$, which is written as $f_i(x) = (pl_i, 1 - pl_i)$.
 
 For $K$ plausibility functions, the belief assignment of any proposition $A$ is combined by computing as:
-$
-b_A = \sum_{B, \cap B = A} \prod_{j=1}^{K} b_{B,j}(x) = \sum_{B, \cap B = A} \prod_{j=1}^{K} f_{j}^{B}(x)
-$
+
+$$b_A = \sum_{B, \cap B = A} \prod_{j=1}^{K} b_{B,j}(x) = \sum_{B, \cap B = A} \prod_{j=1}^{K} f_{j}^{B}(x)$$
 
 The singleton belief for class $i$ is computed as:
-$
-b_i = pl_i \prod_{j=1, j \neq i}^{K} (1 - pl_j) = f_{i}^{1}(x) \prod_{j=1, j \neq i}^{K} f_{j}^{2}(x)
-$
+
+$$b_i = pl_i \prod_{j=1, j \neq i}^{K} (1 - pl_j) = f_{i}^{1}(x) \prod_{j=1, j \neq i}^{K} f_{j}^{2}(x)$$
 
 ## 2.2. Our interpretation 
 
