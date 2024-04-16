@@ -8,7 +8,17 @@ This project is a reproduction of the paper titled “Flexible Visual Recognitio
 
 ## 1.1. Paper summary
 
-The paper introduces a unique method that allows a visual recognition system to express uncertainty and source trust explicitly. This is particularly crucial in real-world scenarios where the input can be unpredictable and varied. The authors focus on two types of uncertainties: confusion and ignorance. By predicting Dirichlet concentration parameters for singletons, the system forms what the authors call “subjective opinions”. These subjective opinions enable the system to make more flexible decisions, enhancing its adaptability and performance in visual recognition tasks. The effectiveness of the proposed method is demonstrated through a series of experiments on synthetic data analysis, visual recognition, and open-set detection.
+The paper presents a novel method that enhances the capabilities of a visual recognition system by allowing it to explicitly express uncertainty and source trust. This is particularly important in real-world scenarios where the input can be unpredictable and varied, and the system needs to make decisions based on incomplete or ambiguous information.
+
+The authors focus on two types of uncertainties: confusion and ignorance. Confusion refers to the uncertainty that arises when the system has difficulty distinguishing between different classes. Ignorance, on the other hand, refers to the uncertainty that arises when the system encounters unfamiliar or out-of-distribution data.
+
+To handle these uncertainties, the authors propose predicting Dirichlet concentration parameters for singletons, which they refer to as “subjective opinions”. These subjective opinions enable the system to make more flexible decisions, enhancing its adaptability and performance in visual recognition tasks. For instance, if the system is unsure about a particular classification, it can express this uncertainty and potentially defer the decision to a human operator or request additional information.
+
+The effectiveness of the proposed method is demonstrated through a series of experiments. In synthetic data analysis, the method is shown to effectively separate confusion and ignorance, providing a clear indication of the source of uncertainty. In visual recognition tasks, the method improves the system’s ability to correctly classify images, even in the presence of confusion and ignorance. In open-set detection tasks, the method effectively identifies out-of-distribution data, demonstrating its robustness and adaptability.
+
+The authors also compare their method with existing approaches and show that it outperforms them in various aspects. They argue that traditional methods, such as softmax, may not be suitable for deriving confusion from probability after training, and that the proposed method provides a more effective solution.
+
+In conclusion, the paper introduces a unique approach to handling uncertainties in visual recognition systems, providing a significant contribution to the field. The proposed method not only improves the performance of the system but also enhances its adaptability and robustness, making it more suitable for real-world applications.
 
 # 2. The method and my interpretation
 
