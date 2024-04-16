@@ -86,7 +86,7 @@ where $y = [y_{1}, y_{2}, . . . , y_{i}, . . . , y_{K}]^{T}$ is one-hot class la
 
 Different from EDL, class evidence is replaced with belief. Hence, $α$ is directly calculated from singleton beliefs and overall uncertainty. It is derived as: 
 
-$$α_{i}=KU_{b_{i}}+1=\frac{1-\sum_{j=1}^{K}b_{j}}{K}Kb_{i}+1$$
+$$α_{i}=KU_{b_{i}}+1=\dfrac{1-\sum_{j=1}^{K}b_{j}}{K}Kb_{i}+1$$
 
 where $b_{i}$ could be obtained from Eq. 6. During inference, all opinions could be directly predicted by performing combinations on the output of plausibility functions.
 
