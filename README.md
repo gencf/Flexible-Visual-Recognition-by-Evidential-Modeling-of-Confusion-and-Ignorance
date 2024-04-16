@@ -52,6 +52,44 @@ The singleton belief for class $i$ is computed as:
 
 $$b_i = pl_i \prod_{j=1, j \neq i}^{K} (1 - pl_j) = f_{i}^{1}(x) \prod_{j=1, j \neq i}^{K} f_{j}^{2}(x)$$
 
+The total uncertainty $U$ is calculated as: 
+
+$$U=1-\sum_{i=1}^{K}b_{i}$$
+
+Each plausibility function $f_{i}(·)$ can be constructed as a normalized dual-output linear layer or a single multi-output layer after being activated by a sigmoid function $\sigma(·)$. The output is regarded as the value of class plausibility. The plausibility function is then formulated as: 
+
+$$(pl_{i},1-pl_{i})=f_{i}(x)=\sigma(w_{i}^{T}\Phi(x))$$
+
+To encourage the plausibility function to match our expected behavior, i.e., predicting the plausibility instead of the belief of singleton, a regularization term is added as: 
+
+$$L_{reg}=\sum_{i=1}^{K}y_{i}[pl_{i}-(1-\hat{I})]^{2}$$
+
+where $\hat{I}$ is the current estimation of ignorance.
+
+Following EDL, a Kullback-Leibler loss is used to minimize evidence on unrelated classes as: 
+
+$$L_{KL}=KL(Dir(·|α~)||Dir(·|⟨1,…,1⟩))$$
+
+where $α~=y+(1−y)⊙α$, $⊙$ for element-wise multiplication. Combining all terms together yields the final loss as: 
+
+$$L=L_{EDL}+λ_{reg}L_{reg}+λ_{KL}L_{KL}$$
+
+Each loss term is accompanied by a balance weight, and we gradually increase the effect of $L_{KL}$ through an additional annealing coefficient.
+
+After developing opinions with the proposed method, a straightforward solution would be setting the belief threshold for outputs to achieve flexible recognition. The sample will be rejected if the ignorance is too large that no combination would exceed the threshold. And the model gives incrementally combined predictions if no singleton belief meets the bar.
+
+The learning of singleton belief is implemented as evidence acquisition on a Dirichlet prior. The loss of EDL is: 
+
+$$L_{EDL}=\sum_{i=1}^{K}y_{i}[log(\sum_{j=1}^{K}α_{j})-log(α_{i})]$$
+
+where $y = [y_{1}, y_{2}, . . . , y_{i}, . . . , y_{K}]^{T}$ is one-hot class label for a sample $x$, and $α = [α_{1}, α_{2}, . . . α_{K}]^{T}$ are parameters of a Dirichlet distribution $Dir(·|α)$.
+
+Different from EDL, class evidence is replaced with belief. Hence, $α$ is directly calculated from singleton beliefs and overall uncertainty. It is derived as: 
+
+$$α_{i}=KU_{b_{i}}+1=\frac{1-\sum_{j=1}^{K}b_{j}}{K}Kb_{i}+1$$
+
+where $b_{i}$ could be obtained from Eq. 6. During inference, all opinions could be directly predicted by performing combinations on the output of plausibility functions.
+
 ## 2.2. Our interpretation 
 
 @TODO: Explain the parts that were not clearly explained in the original paper and how you interpreted them.
