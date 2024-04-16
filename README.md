@@ -98,7 +98,17 @@ where $b_{i}$ could be obtained from Eq. 6. During inference, all opinions could
 
 ## 3.1. Experimental setup
 
-@TODO: Describe the setup of the original paper and whether you changed any settings.
+In the original paper, a variety of experiments were conducted to test the proposed method's effectiveness in handling uncertainties in visual recognition systems. The experiments were designed to demonstrate the separation of two sources of uncertainty, indicate the correct class on misclassified samples with estimated confusion, and apply ignorance to compare with other methods on the task open-set detection.
+
+The authors used the ResNet-18 as the backbone for their experiments, except on synthetic data and open-set detection. The dimension of the extracted feature was set to 512. For the proposed method, they applied the sigmoid activation on the last linear layer to work as multiple plausibility functions. They found both EDL and their method to be more sensitive to the learning rate. Specifically, they set the learning rate for both methods to 0.004 with a momentum of 0.9 for the batch size of 128. The $\lambda_{KL}$ in Eq. 13 annealed to 0 with epochs with the maximum coefficient of 0.05, and $\lambda_{reg}$ was set to 1.
+
+For our study, we have decided to focus specifically on the CIFAR-10 and CIFAR-100 datasets for the open-set detection task. These datasets are directly obtained from $\texttt{torchvision.datasets.CIFAR10}$ and $\texttt{torchvision.datasets.CIFAR100}$ respectively.
+
+The CIFAR-10 dataset consists of 60,000 32x32 color images in 10 classes, with 6,000 images per class. There are 50,000 training images and 10,000 test images.
+
+The CIFAR-100 dataset is just like the CIFAR-10, except it has 100 classes containing 600 images each. There are 500 training images and 100 testing images per class. The 100 classes in the CIFAR-100 are grouped into 20 coarse classes.
+
+This focus will allow us to thoroughly investigate and understand the performance of the proposed method on these particular datasets. We have not made any changes to the original experimental setup and have followed the same procedures and settings as described in the paper to ensure the accuracy of our results. Our goal is to verify the effectiveness of the proposed method as presented in the original paper.
 
 ## 3.2. Running the code
 
