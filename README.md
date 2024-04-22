@@ -1,24 +1,45 @@
-# Paper title Flexible Visual Recognition by Evidential Modeling of Confusion and Ignorance
+# [Flexible Visual Recognition by Evidential Modeling of Confusion and Ignorance](https://openaccess.thecvf.com/content/ICCV2023/papers/Fan_Flexible_Visual_Recognition_by_Evidential_Modeling_of_Confusion_and_Ignorance_ICCV_2023_paper.pdf)
 
-This readme file is an outcome of the [CENG502 (Spring 2024)](https://ceng.metu.edu.tr/~skalkan/ADL/) project for reproducing a paper without an implementation. See [CENG502 (Spring 2024) Project List](https://github.com/CENG502-Projects/CENG502-Spring2024) for a complete list of all paper reproduction projects.
+This readme file is an outcome of the [CENG502 (Spring 2024)](https://ceng.metu.edu.tr/~skalkan/ADL/) project for reproducing a paper without any public implementation. See [CENG502 (Spring 2024) Project List](https://github.com/CENG502-Projects/CENG502-Spring2024) for a complete list of all paper reproduction projects.
 
 # 1. Introduction
 
-This project is a reproduction of the paper titled “Flexible Visual Recognition by Evidential Modeling of Confusion and Ignorance”, which was published in the International Conference on Computer Vision (ICCV) in 2023. The paper tackles the inherent difficulties in visual recognition systems, specifically the frequent errors in classifying known categories and the system’s tendency to incorrectly handle images that don’t belong to any of the classes it has been trained on. The goal of this project is to reproduce the results presented in the paper, specifically focusing on the experiments conducted on the CIFAR-10 and CIFAR-100 datasets, and verify the effectiveness of the proposed method
+This project is a reproduction of the paper titled “Flexible Visual Recognition by Evidential Modeling of Confusion and Ignorance”, which was published in the International Conference on Computer Vision (ICCV) in 2023. The paper tackles the inherent difficulties in visual recognition systems, specifically the frequent errors in classifying known categories and the system’s tendency to incorrectly handle images that don’t belong to any of the classes it has been trained on. The goal of this project is to reproduce the results presented in the paper, specifically focusing on the experiments conducted on the CIFAR-10 and CIFAR-100 datasets, and verify the effectiveness of the proposed method.
 
 ## 1.1. Paper summary
 
 The paper presents a novel method that enhances the capabilities of a visual recognition system by allowing it to explicitly express uncertainty and source trust. This is particularly important in real-world scenarios where the input can be unpredictable and varied, and the system needs to make decisions based on incomplete or ambiguous information.
 
-The authors focus on two types of uncertainties: confusion and ignorance. Confusion refers to the uncertainty that arises when the system has difficulty distinguishing between different classes. Ignorance, on the other hand, refers to the uncertainty that arises when the system encounters unfamiliar or out-of-distribution data.
+The authors focus on two types of uncertainties: confusion and ignorance. Confusion refers to the uncertainty that arises when the system has difficulty distinguishing between different classes. Ignorance, on the other hand, refers to the uncertainty that arises when the system encounters unfamiliar or out-of-distribution data. These uncertainties are quantified using Subjective Logic.
 
-To handle these uncertainties, the authors propose predicting Dirichlet concentration parameters for singletons, which they refer to as “subjective opinions”. These subjective opinions enable the system to make more flexible decisions, enhancing its adaptability and performance in visual recognition tasks. For instance, if the system is unsure about a particular classification, it can express this uncertainty and potentially defer the decision to a human operator or request additional information.
+The effect of these uncertainties can be seen in Figure 1, where the system detects <b>confusion</b> when there are multiple classification options with non-low probabilities <i>(conflicting evidence)</i>, and <b>ignorance</b> when all class probabilities is low to make a decision <i>(absence of evidence)</i>.
 
-The effectiveness of the proposed method is demonstrated through a series of experiments. In synthetic data analysis, the method is shown to effectively separate confusion and ignorance, providing a clear indication of the source of uncertainty. In visual recognition tasks, the method improves the system’s ability to correctly classify images, even in the presence of confusion and ignorance. In open-set detection tasks, the method effectively identifies out-of-distribution data, demonstrating its robustness and adaptability.
+<p align="center">
+  <img src="figures/confusion_and_ignorance.png" alt="Confusion and ignorace figure" width="90%">
+  <br>
+  <em>Figure 1: Classification, confusion and ignorance values for<br> Known->Confusion->Known->Ignorance image transformation with Mixup <br>for illustrative purposes <i>(from the paper)</i>.</em>
+</p>
+
+To handle these uncertainties, the authors propose predicting Dirichlet concentration parameters for singletons, which they refer to as “subjective opinions”. These subjective opinions enable the system to make more flexible decisions, enhancing its adaptability and performance in visual recognition tasks. For instance, if the system is unsure about a particular classification (the decision is in the <i>reject interval</i> as it can be seen in the Figure 2), it can express this uncertainty and potentially defer the decision to a human operator or request additional information.
+
+<p align="center">
+  <img src="figures/confusion_and_ignorance_2.png" alt="Belief, confusion and ignorance intervals figure" width="90%">
+  <br>
+  <em>Figure 2: Belief, confusion and ignorance as intervals. <i>(from the paper)</i>.</em>
+</p>
+
+The effectiveness of the proposed method is demonstrated through a series of experiments. In synthetic data analysis, the method is shown to effectively separate confusion and ignorance, providing a clear indication of the source of uncertainty, which can be observed in Figure 3. In visual recognition tasks, the method improves the system’s ability to correctly classify images, even in the presence of confusion and ignorance. In open-set detection tasks, the method effectively identifies out-of-distribution data, demonstrating its robustness and adaptability.
+
+
+<p align="center">
+  <img src="figures/synthethic_data_figure.png" alt="Synthetic data results figure" width="90%">
+  <br>
+  <em>Figure 3: Synthetic data experiment results <i>(from the paper)</i>.</em>
+</p>
 
 The authors also compare their method with existing approaches and show that it outperforms them in various aspects. They argue that traditional methods, such as softmax, may not be suitable for deriving confusion from probability after training, and that the proposed method provides a more effective solution.
 
-In conclusion, the paper introduces a unique approach to handling uncertainties in visual recognition systems, providing a significant contribution to the field. The proposed method not only improves the performance of the system but also enhances its adaptability and robustness, making it more suitable for real-world applications.
+In conclusion, the paper introduces a unique approach to handling uncertainties in visual recognition systems, providing a significant contribution to the field. The proposed method not only improves the performance of the system but also enhances its adaptability and robustness by enabling more informed and dynamic decision-making, which provides a more suitable and flexible approach in terms of real-world applications.
 
 # 2. The method and my interpretation
 
@@ -26,21 +47,107 @@ In conclusion, the paper introduces a unique approach to handling uncertainties 
 
 The original method proposed in the paper is a novel approach to handle uncertainties in visual recognition systems using the theory of Subjective Logic. This theory allows the system to express uncertainty and source trust explicitly, which is crucial in real-world scenarios where the input can be unpredictable and varied.
 
-The method focuses on two types of uncertainties:
+In the paper, it is modeled that the uncertainty $U$ for each sample $x$ comes from two seperate sources, i.e., confusion $C$ and ignorance $I$. This is represented as:
 
-1. **Confusion**: This type of uncertainty arises when the system finds it challenging to make a clear distinction between known classes. For instance, an image might contain features that match multiple known classes, making it difficult for the system to confidently assign it to one specific class. The overall confusion $C$ is the total mass of the non-singleton subsets. In other words, the confusion $C$ is the sum of masses shared between two or more classes. This is represented as:
+$$U^x = C^x + I^x$$
+
+We define the $2^\Theta$ as the power set of the set of classes $\Theta$:
+
+$$2^{\Theta} = \{A | A \subseteq \Theta\}$$
+
+Also, we say $b_A$ is the belief assignment of the proposition $A$. If we sum up all $b_A$ for all propositions $A$, we get the equation below:
+
+$$\sum_{A \in 2^{\Theta}} b_A = 1$$
+
+The belief for any proposition is then calculated as the summation of contained mass:
+
+$$b_A = \sum_{B, B \subseteq A} b_B$$
+
+
+And also, we have the uncertainty $U$ as:
+
+$$U = 1 - \sum_{i=1}^{K} b_i$$
+
+Now, if we substitute the modeled uncertainty $U$ into this equation, we obtain:
+
+$$C + I = 1 - \sum_{i=1}^{K} b_i$$
+$$C + I + \sum_{i=1}^{K} b_i = 1$$
+
+
+
+<br>
+<br>
+These uncertainties in the method (confusion and ignorance) are explained and formulated as below:
+
+1. **Confusion**:
+
+This type of uncertainty arises when the system finds it challenging to make a clear distinction between known classes. For instance, an image might contain features that match multiple known classes, making it difficult for the system to confidently assign it to one specific class. The overall confusion $C$ is the total mass of the non-singleton subsets. In other words, the confusion $C$ is the sum of masses shared between two or more classes. This is represented as:
 
 $$C = \sum_{A, A \in 2^{\Theta}, 2 \leq |A| \leq K} b_A$$
 
-2. **Ignorance**: This type of uncertainty comes into play when the system encounters an input that is entirely outside its training distribution. In such cases, the system lacks any relevant evidence to base a decision on, leading to high ignorance. The ignorance $I$ could be calculated similarly as:
+
+Additionally, we can seperate the confusion as class-related confusion and class-unrelated confusion. They are defined for class $i$ as:
+
+$$C_{i} = \sum_{A, A \in 2^{\Theta}, 2 \leq |A| \leq K, i \bigcap A = i} b_A$$
+
+$$C_{\neg i} = \sum_{A, A \in 2^{\Theta}, 2 \leq |A| \leq K, i \bigcap A \neq i} b_A$$
+
+where:
+
+$$C =  C_i + C_{\neg i}$$
+
+
+Now, we define the plausibility for class $i$, which is the total mass of propositions that has a non-empty union with the current one, as:
+
+$$pl_i = b_i + C_i$$
+
+
+
+In the Figure 2, you can see the relation between belief, class-related confusion and plausibility values, where plausibility ($pl$) is equal to belief ($b$) summed with the class-related confusion ($C_i$).
+
+
+
+2. **Ignorance**:
+
+This type of uncertainty comes into play when the system encounters an input that is entirely outside its training distribution. In such cases, the system lacks any relevant evidence to base a decision on, leading to high ignorance.
+
+We define the plausiblity function (which will be crucial soon) for class $i$ as:
+
+$$f_i(x) = (pl_i, 1 - pl_i)$$
+
+
+For $K$ plausibility functions, the belief assignment of any proposition $A$ is combined by computing as:
+
+$$b_A = \sum_{B, \cap B = A} \prod_{j=1}^{K} b_{B,j}(x) = \sum_{B, \cap B = A} \prod_{j=1}^{K} f_{j}^{B}(x)$$
+
+
+So, we can further clarify the singleton belief of the class $i$ as:
+
+$$b_i = pl_i \prod_{j=1, j \neq i}^{K} (1 - pl_j) = f_{i}^{1}(x) \prod_{j=1, j \neq i}^{K} f_{j}^{2}(x)$$
+
+The ignorance $I$ could be calculated similarly as:
 
 $$I = \prod_{j=1}^{K} (1 - pl_j) = \prod_{j=1}^{K} f_{j}^{2}(x)$$
 
-and the total confusion between all different class combinations is $C = U - I$.
+The total confusion between all different class combinations is $C = U - I$.
 
-The uncertainty $U$ for each sample $x$ comes from two distinct sources, i.e., confusion $C$ and ignorance $I$. This is represented as:
 
-$$U_x = C_x + I_x$$
+Also, from the previous equations, we can derive:
+
+$$C + I + \sum_{i=1}^{K} b_i = \sum_{A, A \in 2^{\Theta}, 2 \leq |A| \leq K} b_A + I + \sum_{i=1}^{K} b_i = 1$$
+
+The ignorance I, therefore, could be regarded as
+the mass placed on the empty set $\emptyset$ in the frame, which indicates the level of lacking evidence.
+
+
+The demonstration of the combination process with 2 and 3 class exaples are in the Figure 4 below:
+
+<p align="center">
+  <img src="figures/belief_function.png" alt="Demonstration" width="90%">
+  <br>
+  <em>Figure 4: Evidence combination demonstration <i>(from the paper)</i>.</em>
+</p>
+
 
 To model these uncertainties, the method predicts Dirichlet concentration parameters for singletons. In the context of Subjective Logic, a singleton is a set with only one element. These predictions allow the system to form what the authors call “subjective opinions”.
 
@@ -52,53 +159,48 @@ This approach allows the system to handle the complexities and uncertainties of 
 
 In terms of methodology, the paper uses the theory of Subjective Logic to model the uncertainties. The recognition process is regarded as an evidence-collecting process where confusion is defined as conflicting evidence, while ignorance is the absence of evidence. By predicting Dirichlet concentration parameters for singletons, comprehensive subjective opinions, including confusion and ignorance, could be achieved via further evidence combinations.
 
-The paper proposes to decompose the problem into $K$ plausibility functions $f_i(\cdot)$ for $i = 1, . . . , K$ on the same frame. Each plausibility function $f_i(\cdot)$ is designed to give two predictions only considering class $i$, which is written as $f_i(x) = (pl_i, 1 - pl_i)$.
+The paper proposes to decompose the problem into $K$ plausibility functions $f_i(\cdot)$ for $i = 1, . . . , K$ on the same frame. Each plausibility function $f_i(\cdot)$ is designed to give two predictions only considering class $i$, which is written as $f_i(x) = (pl_i, 1 - pl_i)$. The computational complexity is $O(n)$ and we could only calculate necessary confusion terms for specific conditions.
 
-For $K$ plausibility functions, the belief assignment of any proposition $A$ is combined by computing as:
 
-$$b_A = \sum_{B, \cap B = A} \prod_{j=1}^{K} b_{B,j}(x) = \sum_{B, \cap B = A} \prod_{j=1}^{K} f_{j}^{B}(x)$$
 
-The singleton belief for class $i$ is computed as:
 
-$$b_i = pl_i \prod_{j=1, j \neq i}^{K} (1 - pl_j) = f_{i}^{1}(x) \prod_{j=1, j \neq i}^{K} f_{j}^{2}(x)$$
-
-The total uncertainty $U$ is calculated as: 
-
-$$U=1-\sum_{i=1}^{K}b_{i}$$
-
-Each plausibility function $f_{i}(·)$ can be constructed as a normalized dual-output linear layer or a single multi-output layer after being activated by a sigmoid function $\sigma(·)$. The output is regarded as the value of class plausibility. The plausibility function is then formulated as: 
+In this paper, each plausibility function $f_{i}(·)$ is decided to be a single multi-output layer after being activated by a sigmoid function $\sigma(·)$. The output is regarded as the value of class plausibility. The plausibility function is then formulated as: 
 
 $$(pl_{i},1-pl_{i})=f_{i}(x)=\sigma(w_{i}^{T}\Phi(x))$$
 
-To encourage the plausibility function to match our expected behavior, i.e., predicting the plausibility instead of the belief of singleton, a regularization term is added as: 
-
-$$L_{reg}=\sum_{i=1}^{K}y_{i}[pl_{i}-(1-\hat{I})]^{2}$$
-
-where $\hat{I}$ is the current estimation of ignorance.
-
-Following EDL, a Kullback-Leibler loss is used to minimize evidence on unrelated classes as: 
-
-$$L_{KL}=KL(Dir(·|α~)||Dir(·|⟨1,…,1⟩))$$
-
-where $α~=y+(1−y)⊙α$, $⊙$ for element-wise multiplication. Combining all terms together yields the final loss as: 
-
-$$L=L_{EDL}+λ_{reg}L_{reg}+λ_{KL}L_{KL}$$
-
-Each loss term is accompanied by a balance weight, and we gradually increase the effect of $L_{KL}$ through an additional annealing coefficient.
-
-After developing opinions with the proposed method, a straightforward solution would be setting the belief threshold for outputs to achieve flexible recognition. The sample will be rejected if the ignorance is too large that no combination would exceed the threshold. And the model gives incrementally combined predictions if no singleton belief meets the bar.
+where $\Phi(x)$ constructs a D-dimensional feature embedding from the input $x$, and $w_{i}$ is the weight vector for class $i$. 
 
 The learning of singleton belief is implemented as evidence acquisition on a Dirichlet prior. The loss of EDL is: 
 
 $$L_{EDL}=\sum_{i=1}^{K}y_{i}[log(\sum_{j=1}^{K}α_{j})-log(α_{i})]$$
 
-where $y = [y_{1}, y_{2}, . . . , y_{i}, . . . , y_{K}]^{T}$ is one-hot class label for a sample $x$, and $α = [α_{1}, α_{2}, . . . α_{K}]^{T}$ are parameters of a Dirichlet distribution $Dir(·|α)$.
+For the class $x$, the label i one-hot vector $y = [y_{1}, y_{2}, . . . , y_{i}, . . . , y_{K}]^{T}$ , and parameters of a Dirichlet distribution $Dir(·|α)$ are $α = [α_{1}, α_{2}, . . . α_{K}]^{T}$.
 
-Different from EDL, class evidence is replaced with belief. Hence, $α$ is directly calculated from singleton beliefs and overall uncertainty. It is derived as: 
 
-$$α_{i}=KU_{b_{i}}+1=\dfrac{1-\sum_{j=1}^{K}b_{j}}{K}Kb_{i}+1$$
+$α$ is calculated directly from singleton beliefs and overall uncertainty, different from EDL. It is obtained as:
 
-where $b_{i}$ could be obtained from Eq. 6. During inference, all opinions could be directly predicted by performing combinations on the output of plausibility functions.
+$$α_{i}=KU_{b_{i}}+1=\dfrac{1-\sum_{j=1}^{K}{b_{j}}}{K}Kb_{i}+1$$
+
+During inference, $b_{i}$ could be obtained from output of plausibility functions using the formula of singleton belief of a class.
+
+For a better plausibility function, a regularization term is added: 
+
+$$L_{reg}=\sum_{i=1}^{K}y_{i}[pl_{i}-(1-\hat{I})]^{2}$$
+
+where $\hat{I}$ is the current estimation of ignorance.
+
+Following EDL, KL loss is used to minimize the unrelated class evidence: 
+
+$$L_{KL}=KL(Dir(·|α~)||Dir(·|⟨1,…,1⟩))$$
+
+where $α~=y+(1−y)⊙α$, $⊙$ for element-wise multiplication.
+
+The final loss is: 
+
+$$L=L_{EDL}+λ_{reg}L_{reg}+λ_{KL}L_{KL}$$
+
+We use weights to balance the losses. We gradually increase the effect of $L_{KL}$ through an additional annealing coefficient.
+
 
 ## 2.2. Our interpretation 
 
@@ -139,3 +241,4 @@ This focus will allow us to thoroughly investigate and understand the performanc
 # Contact
 
 @TODO: Provide your names & email addresses and any other info with which people can contact you.
+
