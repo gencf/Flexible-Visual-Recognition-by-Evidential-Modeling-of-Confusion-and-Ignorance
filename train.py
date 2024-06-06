@@ -84,6 +84,13 @@ class Train:
             verbose=self.verbose
         )
 
+        # print the model information
+        if self.verbose:
+            print(self.resnet18_classifier)
+
+            # print the number of parameters
+            print(f"Number of parameters: {sum(p.numel() for p in self.resnet18_classifier.parameters() if p.requires_grad)}")
+
 
 
         # Make sure model saving path exists
@@ -240,6 +247,10 @@ class Train:
                 # save the model
                 if step_num % self.save_every_for_model == 0:
                     self.save_whole_model(batch_idx)
+                
+
+                # print the loss and accuracy
+                if self.verbose
 
             
 
