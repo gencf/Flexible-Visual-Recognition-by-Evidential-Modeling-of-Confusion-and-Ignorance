@@ -130,6 +130,9 @@ class Train:
 
 
     def save_whole_model(self, iter):
+        if not os.path.exists(os.path.join(self.project_root, self.model_save_path, self.exp_name)):
+            os.makedirs(os.path.join(self.project_root, self.model_save_path, self.exp_name))
+
         full_model_save_path = os.path.join(self.project_root, self.model_save_path, self.exp_name, f"full_model_{self.exp_name}_{iter}.pt")
 
         torch.save(self.resnet18_classifier.state_dict(), full_model_save_path)
@@ -210,7 +213,7 @@ class Train:
 
         # train the model
         for current_epoch in tqdm(range(self.max_epochs), desc='Epochs', total=self.max_epochs, dynamic_ncols=True):
-            for batch_idx, (inputs, y_true) in enumerate(testloader):
+            for batch_idx, (inputs, y_true) in enumerate(trainloader):
                 # move the inputs and y_true to the device
                 inputs, y_true = inputs.to(self.device), y_true.to(self.device)
 
@@ -239,16 +242,18 @@ class Train:
                 train_accuracy = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)).detach().cpu() / self.train_batch_size
 
                 # calculate the step number
-                step_num = current_epoch * len_dataset + batch_idx
+                step_num = current_epoch * (len_dataset//batch_idx) + batch_idx
 
 
 
                 # save the model
-                if step_num % self.save_every_for_model == 0:
+                if current_epoch % self.save_every_for_model:
                     self.save_whole_model(batch_idx)
+                    if self.verbose:
+                        print(f"Model saved at epoch {current_epoch} and step {step_num}")
                 
 
-                if step_num % self.logging_interval == 0:
+                if step_num % self.logging_interval:
                     # log the losses
                     if self.use_wandb:
                         wandb.log({'train_loss': loss.item(),
@@ -259,7 +264,9 @@ class Train:
 
                     # print the loss and accuracy
                     if self.verbose:
-                        print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy*100:.2f}%")
+                        # update the progress bar
+                        print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item()}, Accuracy: {train_accuracy}")
+
 
             
 
@@ -339,7 +346,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_batch_size', type=int, default=128,
                         help='The batch size for testing.')
     
-    parser.add_argument('--max_epochs', type=int, default=50,
+    parser.add_argument('--max_epochs', type=int, default=50000,
                         help='The number of max epochs for training.')
     
     parser.add_argument('--learning_rate', type=float, default=0.004,
@@ -363,10 +370,10 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=2,
                         help='The number of workers for the dataloaders.')
 
-    parser.add_argument('--save_every_for_model', type=int, default=10000,
-                        help='The number of iterations to save the model.')
+    parser.add_argument('--save_every_for_model', type=int, default=50,
+                        help='The number of epochs to save the model.')
     
-    parser.add_argument('--logging_interval', type=int, default=100,
+    parser.add_argument('--logging_interval', type=int, default=10000,
                         help='The number of iterations to log the informations.')
 
 
