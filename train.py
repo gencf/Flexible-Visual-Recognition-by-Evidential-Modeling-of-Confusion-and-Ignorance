@@ -201,6 +201,8 @@ class Train:
         # get the length of the dataset
         len_dataset = len(trainloader.dataset)
 
+        dataset_batch_len = len_dataset//self.train_batch_size
+
         # set the model to the device
         self.resnet18_classifier.to(self.device)
 
@@ -242,18 +244,19 @@ class Train:
                 train_accuracy = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)).detach().cpu() / self.train_batch_size
 
                 # calculate the step number
-                step_num = current_epoch * (len_dataset//batch_idx) + batch_idx
+                step_num = current_epoch * dataset_batch_len + batch_idx
 
 
 
                 # save the model
-                if current_epoch % self.save_every_for_model:
+                if ((current_epoch) % (self.save_every_for_model) == 0) and (batch_idx == 0):
                     self.save_whole_model(batch_idx)
                     if self.verbose:
                         print(f"Model saved at epoch {current_epoch} and step {step_num}")
+
                 
 
-                if step_num % self.logging_interval:
+                if (step_num+1) % self.logging_interval == 0:
                     # log the losses
                     if self.use_wandb:
                         wandb.log({'train_loss': loss.item(),
@@ -265,7 +268,7 @@ class Train:
                     # print the loss and accuracy
                     if self.verbose:
                         # update the progress bar
-                        print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item()}, Accuracy: {train_accuracy}")
+                        print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy}")
 
 
             
@@ -346,7 +349,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_batch_size', type=int, default=128,
                         help='The batch size for testing.')
     
-    parser.add_argument('--max_epochs', type=int, default=50000,
+    parser.add_argument('--max_epochs', type=int, default=5000,
                         help='The number of max epochs for training.')
     
     parser.add_argument('--learning_rate', type=float, default=0.004,
@@ -373,7 +376,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_every_for_model', type=int, default=50,
                         help='The number of epochs to save the model.')
     
-    parser.add_argument('--logging_interval', type=int, default=10000,
+    parser.add_argument('--logging_interval', type=int, default=100,
                         help='The number of iterations to log the informations.')
 
 
