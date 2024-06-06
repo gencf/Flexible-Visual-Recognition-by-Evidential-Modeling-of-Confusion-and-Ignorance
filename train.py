@@ -183,6 +183,7 @@ class Train:
             max_epochs=self.max_epochs,
             max_lambda_kl=self.max_lambda_kl,
             annealing_last_value=self.annealing_last_value,
+            n_classes=self.n_classes,
             lambda_reg=self.lambda_reg
         )
 
@@ -290,7 +291,7 @@ if __name__ == '__main__':
     parser.add_argument('--online', type=str2bool, nargs='?', const=True, default=True,
                         help='use wandb online')
     
-    parser.add_argument('--exp_name', type=str, default='master',
+    parser.add_argument('--exp_name', type=str, default='exp',
                         help='experiment name')
     
 
