@@ -294,18 +294,18 @@ def plot_ignorance_uncertainity_confusion(model,
 
     # move the data and model to the device
     X_grid_tensor = torch.tensor(X_grid, dtype=torch.float32).to(device)
-    model.to(device)
 
     # set the model to evaluation mode
     model.eval()
 
     # get the predictions
     with torch.no_grad():
-        y_pred = model(X_grid_tensor)
+        y_pred = model.to(device)(X_grid_tensor)
         
 
         # get the beliefs, uncertainity, ignorance, confusion
         beliefs, uncertainity, ignorance, confusion = calculate_only_belief_uncertainity_ignorance_confusion(plausibilities=y_pred)
+    
 
 
 
@@ -375,8 +375,6 @@ def plot_ignorance_uncertainity_confusion(model,
     
     plt.show()
 
-    # load back the model to the CPU
-    model.to("cpu")
 
 
 
