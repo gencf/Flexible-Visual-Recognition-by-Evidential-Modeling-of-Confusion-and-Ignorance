@@ -58,6 +58,7 @@ class Train:
         self.lambda_reg = config.lambda_reg
         self.num_workers = config.num_workers
         self.save_every_for_model = config.save_every_for_model
+        self.logging_interval = config.logging_interval
         self.project_root = config.project_root
         self.model_save_path = config.model_save_path
         self.dataset_download_path = config.dataset_download_path
@@ -203,12 +204,18 @@ class Train:
         # set the model to train mode
         self.resnet18_classifier.train()
 
+        # print info
+        print(f"Starting training for {self.max_epochs} epochs with {len_dataset} samples.")
+
 
         # train the model
         for current_epoch in tqdm(range(self.max_epochs), desc='Epochs', total=self.max_epochs, dynamic_ncols=True):
             for batch_idx, (inputs, y_true) in enumerate(testloader):
                 # move the inputs and y_true to the device
                 inputs, y_true = inputs.to(self.device), y_true.to(self.device)
+
+                # turn y_true to one-hot
+                y_true = nn.functional.one_hot(y_true, num_classes=self.n_classes).float()
 
                 # zero the gradients
                 optimizer.zero_grad()
@@ -229,19 +236,11 @@ class Train:
 
                     
                 # calculate the top-1 accuracy
-                _, predicted = y_pred.max(1)
-                train_accuracy = predicted.eq(y_true).sum().item() / y_true.size(0)
+                train_accuracy = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)).detach().cpu() / self.train_batch_size
 
                 # calculate the step number
                 step_num = current_epoch * len_dataset + batch_idx
 
-                # log the losses
-                if self.use_wandb:
-                    wandb.log({'train_loss': loss.item(),
-                               'step': step_num,
-                               'train_accuracy': train_accuracy,
-                               'lr': optimizer.param_groups[0]['lr'],
-                               'lambda_kl': criterion.lambda_kl,})
 
 
                 # save the model
@@ -249,9 +248,18 @@ class Train:
                     self.save_whole_model(batch_idx)
                 
 
-                # print the loss and accuracy
-                if self.verbose:
-                    print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy*100:.2f}%")
+                if step_num % self.logging_interval == 0:
+                    # log the losses
+                    if self.use_wandb:
+                        wandb.log({'train_loss': loss.item(),
+                                'step': step_num,
+                                'train_accuracy': train_accuracy,
+                                'lr': optimizer.param_groups[0]['lr'],
+                                'lambda_kl': criterion.lambda_kl,})
+
+                    # print the loss and accuracy
+                    if self.verbose:
+                        print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy*100:.2f}%")
 
             
 
@@ -331,7 +339,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_batch_size', type=int, default=128,
                         help='The batch size for testing.')
     
-    parser.add_argument('--max_epochs', type=int, default=200,
+    parser.add_argument('--max_epochs', type=int, default=50,
                         help='The number of max epochs for training.')
     
     parser.add_argument('--learning_rate', type=float, default=0.004,
@@ -355,8 +363,11 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=2,
                         help='The number of workers for the dataloaders.')
 
-    parser.add_argument('--save_every_for_model', type=int, default=5000,
+    parser.add_argument('--save_every_for_model', type=int, default=10000,
                         help='The number of iterations to save the model.')
+    
+    parser.add_argument('--logging_interval', type=int, default=100,
+                        help='The number of iterations to log the informations.')
 
 
 
