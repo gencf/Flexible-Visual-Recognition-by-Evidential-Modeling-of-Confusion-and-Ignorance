@@ -59,6 +59,7 @@ class Train:
         self.num_workers = config.num_workers
         self.save_every_for_model = config.save_every_for_model
         self.logging_interval = config.logging_interval
+        self.use_BCE_classic_training = config.use_BCE_classic_training
         self.project_root = config.project_root
         self.model_save_path = config.model_save_path
         self.dataset_download_path = config.dataset_download_path
@@ -75,16 +76,26 @@ class Train:
             raise ValueError('Invalid dataset name. Choose from CIFAR10, CIFAR100')
         
 
-
-        # load the ResNet18 model
-        self.resnet18_classifier = ResNet18_custom_class_number(
-            num_classes=self.n_classes,
-            project_root=self.project_root,
-            use_pretrained=self.use_pretrained_resnet,
-            model_cache_path=self.pretrained_resnet_cache_path,
-            verbose=self.verbose
-        )
-
+        if not config.use_BCE_classic_training:
+            # load the ResNet18 model
+            self.resnet18_classifier = ResNet18_custom_class_number(
+                num_classes=self.n_classes,
+                project_root=self.project_root,
+                use_pretrained=self.use_pretrained_resnet,
+                model_cache_path=self.pretrained_resnet_cache_path,
+                verbose=self.verbose,
+                last_activation=nn.Sigmoid()
+            )
+        else:
+            # load the ResNet18 model
+            self.resnet18_classifier = ResNet18_custom_class_number(
+                num_classes=self.n_classes,
+                project_root=self.project_root,
+                use_pretrained=False,
+                verbose=self.verbose,
+                last_activation=nn.Softmax(dim=1)
+            )
+        
         # print the model information
         if self.verbose:
             print(self.resnet18_classifier)
@@ -190,13 +201,16 @@ class Train:
                                weight_decay=self.weight_decay)
         
         # define the loss function
-        criterion = custom_loss(
-            max_epochs=self.max_epochs,
-            max_lambda_kl=self.max_lambda_kl,
-            annealing_last_value=self.annealing_last_value,
-            n_classes=self.n_classes,
-            lambda_reg=self.lambda_reg
-        )
+        if not self.use_BCE_classic_training:
+            criterion = custom_loss(
+                max_epochs=self.max_epochs,
+                max_lambda_kl=self.max_lambda_kl,
+                annealing_last_value=self.annealing_last_value,
+                n_classes=self.n_classes,
+                lambda_reg=self.lambda_reg
+            )
+        else:
+            criterion = nn.BCEWithLogitsLoss()
 
         # get the length of the dataset
         len_dataset = len(trainloader.dataset)
@@ -229,9 +243,12 @@ class Train:
                 y_pred = self.resnet18_classifier(inputs)
 
                 # calculate the loss
-                loss = criterion(plausibility=y_pred,
-                                 y_true=y_true,
-                                 epoch=current_epoch,)
+                if not self.use_BCE_classic_training:
+                    loss = criterion(plausibility=y_pred,
+                                    y_true=y_true,
+                                    epoch=current_epoch,)
+                else:
+                    loss = criterion(y_pred, y_true)
 
                 # backward pass
                 loss.backward()
@@ -259,11 +276,17 @@ class Train:
                 if (step_num+1) % self.logging_interval == 0:
                     # log the losses
                     if self.use_wandb:
-                        wandb.log({'train_loss': loss.item(),
-                                'step': step_num,
-                                'train_accuracy': train_accuracy,
-                                'lr': optimizer.param_groups[0]['lr'],
-                                'lambda_kl': criterion.lambda_kl,})
+                        if not self.use_BCE_classic_training:
+                            wandb.log({'train_loss': loss.item(),
+                                    'step': step_num,
+                                    'train_accuracy': train_accuracy,
+                                    'lr': optimizer.param_groups[0]['lr'],
+                                    'lambda_kl': criterion.lambda_kl,})
+                        else:
+                            wandb.log({'train_loss': loss.item(),
+                                    'step': step_num,
+                                    'train_accuracy': train_accuracy,
+                                    'lr': optimizer.param_groups[0]['lr']})
 
                     # print the loss and accuracy
                     if self.verbose:
@@ -378,6 +401,9 @@ if __name__ == '__main__':
     
     parser.add_argument('--logging_interval', type=int, default=100,
                         help='The number of iterations to log the informations.')
+    
+    parser.add_argument('--use_BCE_classic_training', type=str2bool, default=False,
+                        help='Whether to use the classic BCE loss for training. If set true, the model will be trained with the classic BCE loss, ignoring the previous configuration choices.')
 
 
 
