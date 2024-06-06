@@ -4,17 +4,20 @@ import torch.nn.functional as F
 
 #TODO: check if sum or mean is used in the loss functions
 
+
 class custom_loss(nn.Module):
     def __init__(self,
                  max_epochs,
                  max_lambda_kl,
                  annealing_last_value,
+                 n_classes,
                  lambda_reg=1):
         super(custom_loss, self).__init__()
 
         self.max_epochs = max_epochs
         self.max_lambda_kl = max_lambda_kl
         self.annealing_last_value = annealing_last_value
+        self.n_classes = n_classes
         self.lambda_reg = lambda_reg
 
         self.lambda_kl = max_lambda_kl
@@ -34,14 +37,16 @@ class custom_loss(nn.Module):
         """
         Forward pass of the custom loss function
         """
-        # get the batch size and number of classes
-        B, K = plausibility.shape
         
         # calculate (1-plausibility) for each class
         inverse_plausibility = 1 - plausibility
 
+
+        # create a mask to mask the diagonal elements with ones
+        mask = torch.eye(self.n_classes).to(plausibility.device)
+
         # calculate beliefs (class plausibility times product of inverse plausibilities of each other class)
-        beliefs = plausibility * ((torch.prod(inverse_plausibility, dim=1)).repeat(K, 1).T / (inverse_plausibility + epsilon))
+        beliefs = (mask + (plausibility.unsqueeze(1) * inverse_plausibility.unsqueeze(2)) * (1 - mask)).prod(dim=1)
 
 
         # calculate the uncertainity (1 - sum of beliefs)
@@ -53,7 +58,7 @@ class custom_loss(nn.Module):
 
 
         # calculate the dirichlet parameters
-        dirichlet_parameters = (beliefs * K / (uncertainity + epsilon).repeat(K, 1).T) + 1
+        dirichlet_parameters = (beliefs * self.n_classes / (uncertainity + epsilon).repeat(self.n_classes, 1).T) + 1
 
 
         # calculate the EDL loss
@@ -87,9 +92,6 @@ class custom_loss(nn.Module):
         Evidential Deep Learning (EDL) loss
         """
 
-        # get the batch size and number of classes
-        B, K = dirichlet_parameters.shape
-
         # calculate the sum of the dirichlet parameters
         sum_dirichlet_parameters = torch.sum(dirichlet_parameters, dim=1, keepdim=True)
 
@@ -104,12 +106,11 @@ class custom_loss(nn.Module):
         """
         Regularization loss
         """
-        
         # get the batch size and number of classes
-        B, K = plausibilities.shape
+        batch_size, n_classes = plausibilities.shape
 
         # calculate the loss
-        loss_REG = y_true * torch.square(plausibilities - (1 - ignorance).repeat(K, 1).T)
+        loss_REG = y_true * torch.square(plausibilities - (1 - ignorance).repeat(n_classes, 1).T)
 
         return torch.sum(loss_REG, dim=1)
     
@@ -154,19 +155,24 @@ class custom_loss(nn.Module):
         
 
 
-def calculate_only_belief_uncertainity_ignorance_confusion(plausibilities, epsilon=1e-6):
+def calculate_only_belief_uncertainity_ignorance_confusion(plausibilities):
     """
     Calculate only beliefs, uncertainity, ignorance, and confusion
     """
-
     # get the batch size and number of classes
-    B, K = plausibilities.shape
+    batch_size, n_classes = plausibilities.shape
 
     # calculate (1-plausibility) for each class
     inverse_plausibility = 1 - plausibilities
 
+    # create a mask to mask the diagonal elements with ones
+    mask = torch.eye(n_classes).to(plausibilities.device)
+
     # calculate beliefs (class plausibility times product of inverse plausibilities of each other class)
-    beliefs = plausibilities * ((torch.prod(inverse_plausibility, dim=1)).repeat(K, 1).T / (inverse_plausibility + epsilon))
+    beliefs = (mask + (plausibilities.unsqueeze(1) * inverse_plausibility.unsqueeze(2)) * (1 - mask)).prod(dim=1)
+
+    # mask the diagonal elements
+
 
 
     # calculate the uncertainity (1 - sum of beliefs)
