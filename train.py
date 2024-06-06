@@ -250,7 +250,8 @@ class Train:
                 
 
                 # print the loss and accuracy
-                if self.verbose
+                if self.verbose:
+                    print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy*100:.2f}%")
 
             
 
