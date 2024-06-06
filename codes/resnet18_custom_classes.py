@@ -23,7 +23,8 @@ class ResNet18_custom_class_number(nn.Module):
                  project_root: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")),
                  use_pretrained: bool = False,
                  model_cache_path: str = os.path.join("weights", "resnet18"),
-                 verbose: bool = True):
+                 verbose: bool = True,
+                 last_activation: nn.Module = nn.Sigmoid()):
         
         super(ResNet18_custom_class_number, self).__init__()
 
@@ -32,6 +33,7 @@ class ResNet18_custom_class_number(nn.Module):
         self.model_cache_path = model_cache_path
         self.use_pretrained = use_pretrained
         self.verbose = verbose
+        self.last_activation = last_activation
 
 
         # check if the number of classes is valid
@@ -94,7 +96,7 @@ class ResNet18_custom_class_number(nn.Module):
     # forward pass
     def forward(self,
                 x: torch.Tensor) -> torch.Tensor:
-        return self.resnet18(x)
+        return self.last_activation(self.resnet18(x))
 
 
 
