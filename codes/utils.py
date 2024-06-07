@@ -286,7 +286,7 @@ def plot_ignorance_uncertainity_confusion(model,
     """
     
     # create the meshgrid
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, plot_step),
+    yy, xx = np.meshgrid(np.arange(x_min, x_max, plot_step),
                          np.arange(y_min, y_max, plot_step))
     
     # create the input data
