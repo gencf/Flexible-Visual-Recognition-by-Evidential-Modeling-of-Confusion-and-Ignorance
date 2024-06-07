@@ -308,26 +308,6 @@ class Train:
                 # update the weights
                 optimizer.step()
 
-                    
-                # calculate the top-1 accuracy
-                train_accuracy = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)).detach().cpu() / self.train_batch_size
-
-
-                y_preds_softmax = F.softmax(y_pred, dim=1)
-                y_preds_softmax_max = torch.max(y_preds_softmax)
-                y_preds_softmax_min = torch.min(y_preds_softmax)
-                y_preds_normalized = (y_preds_softmax - y_preds_softmax_min) / (y_preds_softmax_max - y_preds_softmax_min)
-
-                try:
-                    # calculate the AUROC
-                    if self.auroc_metric_lib == 'torcheval':
-                        self.auroc_metric.update(y_preds_normalized, y_true_not_one_hot)
-                        train_auroc = self.auroc_metric.compute()
-                    elif self.auroc_metric_lib == 'sklearn':
-                        train_auroc = roc_auc_score(y_true.cpu().detach().numpy(), y_preds_normalized.cpu().detach().numpy(), multi_class="ovr", average="micro")
-                except:
-                    train_auroc = 0
-                    print("AUROC calculation failed.")
 
                 # save the model
                 if (step_num+1) % self.save_every_for_model == 0:
@@ -337,7 +317,28 @@ class Train:
 
                 
 
-                if (step_num+1) % self.logging_interval == 0:
+                if (step_num) % self.logging_interval == 0:
+                    # calculate the top-1 accuracy
+                    train_accuracy = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)) / self.train_batch_size
+
+                    # prepare the predictions for AUROC calculation
+                    y_preds_softmax = F.softmax(y_pred, dim=1)
+                    y_preds_softmax_max = torch.max(y_preds_softmax)
+                    y_preds_softmax_min = torch.min(y_preds_softmax)
+                    y_preds_normalized = (y_preds_softmax - y_preds_softmax_min) / (y_preds_softmax_max - y_preds_softmax_min)
+
+                    try:
+                        # calculate the AUROC
+                        if self.auroc_metric_lib == 'torcheval':
+                            self.auroc_metric.update(y_preds_normalized, y_true_not_one_hot)
+                            train_auroc = self.auroc_metric.compute()
+                        elif self.auroc_metric_lib == 'sklearn':
+                            train_auroc = roc_auc_score(y_true.cpu().detach().numpy(), y_preds_normalized.cpu().detach().numpy(), multi_class="ovr", average="micro")
+                    except:
+                        train_auroc = 0
+                        print("AUROC calculation failed.")
+
+
                     # log the losses
                     if self.use_wandb:
                         if not self.use_BCE_classic_training:
@@ -423,7 +424,7 @@ class Train:
                     loss = criterion(F.softmax(y_pred, dim=1), y_true)
 
                 # calculate the top-1 accuracy
-                test_accuracy_step = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)).detach().cpu() / self.test_batch_size
+                test_accuracy_step = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)) / self.test_batch_size
 
                 y_preds_softmax = F.softmax(y_pred, dim=1)
                 y_preds_softmax_max = torch.max(y_preds_softmax)
