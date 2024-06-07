@@ -5,8 +5,7 @@ import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import transforms, datasets
-from torch.utils.data import DataLoader
+from torcheval.metrics import MulticlassAUROC
 
 import argparse
 import yaml
@@ -108,6 +107,10 @@ class Train:
             self.resnet18_classifier.load_state_dict(torch.load(self.pretrained_with_BCE_resnet_path))
             if self.verbose:
                 print(f"Pretrained model (trained with BCE) loaded from: {self.pretrained_with_BCE_resnet_path}")
+
+
+        # create the auroc metric
+        auroc_metric = MulticlassAUROC(num_classes=self.n_classes)
         
         # print the model information
         if self.verbose:
@@ -250,12 +253,12 @@ class Train:
 
         # train the model
         for current_epoch in tqdm(range(self.max_epochs), desc='Epochs', total=self.max_epochs, dynamic_ncols=True):
-            for batch_idx, (inputs, y_true) in enumerate(trainloader):
+            for batch_idx, (inputs, y_true_not_one_hot) in enumerate(trainloader):
                 # move the inputs and y_true to the device
-                inputs, y_true = inputs.to(self.device), y_true.to(self.device)
+                inputs, y_true_not_one_hot = inputs.to(self.device), y_true_not_one_hot.to(self.device)
 
                 # turn y_true to one-hot
-                y_true = nn.functional.one_hot(y_true, num_classes=self.n_classes).float()
+                y_true = nn.functional.one_hot(y_true_not_one_hot, num_classes=self.n_classes).float()
 
                 # zero the gradients
                 optimizer.zero_grad()
@@ -290,6 +293,11 @@ class Train:
                 train_accuracy = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)).detach().cpu() / self.train_batch_size
 
 
+                # calculate the AUROC
+                self.auroc_metric.update(y_pred, y_true_not_one_hot)
+                train_auroc = self.auroc_metric.compute()
+
+
 
                 # save the model
                 if (step_num+1) % self.save_every_for_model == 0:
@@ -307,12 +315,14 @@ class Train:
                                 wandb.log({'train_loss': loss.item(),
                                            'step': step_num,
                                            'train_accuracy': train_accuracy,
+                                           'train_auroc': train_auroc,
                                            'lr': optimizer.param_groups[0]['lr'],
                                            'lambda_kl': criterion.lambda_kl,})
                             else:
                                 wandb.log({'train_loss': loss.item(),
                                            'step': step_num,
                                            'train_accuracy': train_accuracy,
+                                           'train_auroc': train_auroc,
                                            'lr': optimizer.param_groups[0]['lr'],
                                            'lambda_kl': criterion.lambda_kl,
                                            'kl_loss': kl_loss.item(),
@@ -322,6 +332,7 @@ class Train:
                             wandb.log({'train_loss': loss.item(),
                                        'step': step_num,
                                        'train_accuracy': train_accuracy,
+                                       'train_auroc': train_auroc,
                                        'lr': optimizer.param_groups[0]['lr']})
 
                     # print the loss and accuracy
@@ -416,7 +427,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_epochs', type=int, default=5000,
                         help='The number of max epochs for training.')
     
-    parser.add_argument('--optimizer', type=str, default='SGD',
+    parser.add_argument('--optimizer', type=str, default='Adam',
                         help='The optimizer to use (SGD, Adam).')
     
     parser.add_argument('--learning_rate', type=float, default=0.004,
