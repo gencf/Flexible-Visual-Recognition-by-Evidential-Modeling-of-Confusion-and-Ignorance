@@ -58,23 +58,24 @@ config_dict = {
 
 # change some parameters
 
-config_dict["use_wandb"]                          = False
-config_dict["verbose"]                            = True
-config_dict["device"]                             = "cuda"
-config_dict["set_seed"]                           = True
-config_dict["seed"]                               = 42
-config_dict["num_workers"]                        = 4
-config_dict["max_epochs"]                         = 1000
-config_dict["train_batch_size"]                   = 128
-config_dict["test_batch_size"]                    = 3333
-config_dict["dataset_name"]                       = "CIFAR10"
-config_dict["save_every_for_model"]               = 10000
-config_dict["output_losses_separately"]           = True
-config_dict["optimizer"]                          = "SGD"
-config_dict["learning_rate"]                      = 0.004
-config_dict["auroc_metric_lib"]                   = "sklearn"
-config_dict["pretrained_with_BCE_resnet_path"]    = "exps/experiment_17/full_model_experiment_17_999.pt"
-config_dict["exp_name"]                           = "local_exp"
+config_dict["use_wandb"]                                      = False
+config_dict["verbose"]                                        = True
+config_dict["device"]                                         = "cuda"
+config_dict["set_seed"]                                       = True
+config_dict["seed"]                                           = 42
+config_dict["num_workers"]                                    = 4
+config_dict["max_epochs"]                                     = 1000
+config_dict["train_batch_size"]                               = 128
+config_dict["test_batch_size"]                                = 3333
+config_dict["dataset_name"]                                   = "CIFAR10"
+config_dict["save_every_for_model"]                           = 10000
+config_dict["output_losses_separately"]                       = True
+config_dict["optimizer"]                                      = "SGD"
+config_dict["learning_rate"]                                  = 0.004
+config_dict["calculate_test_loss_and_metrics_in_training"]    = False
+config_dict["auroc_metric_lib"]                               = "sklearn"
+config_dict["pretrained_with_BCE_resnet_path"]                = "exps/experiment_17/full_model_experiment_17_999.pt"
+config_dict["exp_name"]                                       = "local_exp"
 
 # create a config to call Train class
 config = argparse.Namespace()
