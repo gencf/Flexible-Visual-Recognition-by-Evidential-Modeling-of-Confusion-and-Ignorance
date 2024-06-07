@@ -4,8 +4,10 @@ import random
 import sys
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torcheval.metrics import MulticlassAUROC
+from sklearn.metrics import roc_auc_score
 
 import argparse
 import yaml
@@ -270,18 +272,18 @@ class Train:
                 # calculate the loss
                 if not self.use_BCE_classic_training:
                     if not self.output_losses_separately:
-                        loss = criterion(plausibility=nn.Sigmoid(y_pred),
+                        loss = criterion(plausibility=F.sigmoid(y_pred),
                                          y_true=y_true,
                                          epoch=current_epoch,
                                          return_losses_seperately=False)
                     else:
-                        kl_loss, reg_loss, bce_loss = criterion(plausibility=nn.Sigmoid(y_pred),
+                        kl_loss, reg_loss, bce_loss = criterion(plausibility=F.sigmoid(y_pred),
                                                                 y_true=y_true,
                                                                 epoch=current_epoch,
                                                                 return_losses_seperately=True)
                         loss = kl_loss + reg_loss + bce_loss
                 else:
-                    loss = criterion(nn.Softmax(dim=1)(y_pred), y_true)
+                    loss = criterion(F.softmax(y_pred, dim=1), y_true)
 
                 # backward pass
                 loss.backward()
@@ -295,7 +297,7 @@ class Train:
 
 
                 # calculate the AUROC
-                self.auroc_metric.update(nn.Softmax(dim=1)(y_pred), y_true_not_one_hot)
+                self.auroc_metric.update(F.softmax(y_pred, dim=1), y_true_not_one_hot)
                 train_auroc = self.auroc_metric.compute()
 
 
