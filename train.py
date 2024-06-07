@@ -46,10 +46,12 @@ class Train:
         self.exp_name = config.exp_name
         self.use_pretrained_resnet = config.use_pretrained_resnet
         self.pretrained_resnet_cache_path = config.pretrained_resnet_cache_path
+        self.pretrained_with_BCE_resnet_path = config.pretrained_with_BCE_resnet_path
         self.dataset_name = config.dataset_name
         self.train_batch_size = config.train_batch_size
         self.test_batch_size = config.test_batch_size
         self.max_epochs = config.max_epochs
+        self.optimizer = config.optimizer
         self.learning_rate = config.learning_rate
         self.momentum = config.momentum
         self.weight_decay = config.weight_decay
@@ -60,6 +62,7 @@ class Train:
         self.save_every_for_model = config.save_every_for_model
         self.logging_interval = config.logging_interval
         self.use_BCE_classic_training = config.use_BCE_classic_training
+        self.output_losses_separately = config.output_losses_separately
         self.project_root = config.project_root
         self.model_save_path = config.model_save_path
         self.dataset_download_path = config.dataset_download_path
@@ -74,6 +77,11 @@ class Train:
             self.n_classes = 100
         else:
             raise ValueError('Invalid dataset name. Choose from CIFAR10, CIFAR100')
+        
+
+        # check the optimizer
+        if self.optimizer not in ['SGD', 'Adam']:
+            raise ValueError('Invalid optimizer. Choose from SGD, Adam')
         
 
         if not config.use_BCE_classic_training:
@@ -95,6 +103,11 @@ class Train:
                 verbose=self.verbose,
                 last_activation=nn.Softmax(dim=1)
             )
+        
+        if self.pretrained_with_BCE_resnet_path:
+            self.resnet18_classifier.load_state_dict(torch.load(self.pretrained_with_BCE_resnet_path))
+            if self.verbose:
+                print(f"Pretrained model (trained with BCE) loaded from: {self.pretrained_with_BCE_resnet_path}")
         
         # print the model information
         if self.verbose:
@@ -195,10 +208,17 @@ class Train:
             )
         
         # define the optimizer
-        optimizer = optim.Adam(self.resnet18_classifier.parameters(),
-                               lr=self.learning_rate,
-                               betas=(self.momentum, 0.999),
-                               weight_decay=self.weight_decay)
+        if self.optimizer == 'Adam':
+            optimizer = optim.Adam(self.resnet18_classifier.parameters(),
+                                lr=self.learning_rate,
+                                betas=(self.momentum, 0.999),
+                                weight_decay=self.weight_decay)
+        elif self.optimizer == 'SGD':
+            optimizer = optim.SGD(self.resnet18_classifier.parameters(),
+                                  lr=self.learning_rate,
+                                  momentum=self.momentum,
+                                  weight_decay=self.weight_decay)
+
         
         # define the loss function
         if not self.use_BCE_classic_training:
@@ -226,6 +246,7 @@ class Train:
         # print info
         print(f"Starting training for {self.max_epochs} epochs with {len_dataset} samples.")
 
+        step_num = 0
 
         # train the model
         for current_epoch in tqdm(range(self.max_epochs), desc='Epochs', total=self.max_epochs, dynamic_ncols=True):
@@ -244,9 +265,17 @@ class Train:
 
                 # calculate the loss
                 if not self.use_BCE_classic_training:
-                    loss = criterion(plausibility=y_pred,
-                                    y_true=y_true,
-                                    epoch=current_epoch,)
+                    if not self.output_losses_separately:
+                        loss = criterion(plausibility=y_pred,
+                                         y_true=y_true,
+                                         epoch=current_epoch,
+                                         return_losses_seperately=False)
+                    else:
+                        kl_loss, reg_loss, bce_loss = criterion(plausibility=y_pred,
+                                                                y_true=y_true,
+                                                                epoch=current_epoch,
+                                                                return_losses_seperately=True)
+                        loss = kl_loss + reg_loss + bce_loss
                 else:
                     loss = criterion(y_pred, y_true)
 
@@ -260,14 +289,11 @@ class Train:
                 # calculate the top-1 accuracy
                 train_accuracy = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)).detach().cpu() / self.train_batch_size
 
-                # calculate the step number
-                step_num = current_epoch * dataset_batch_len + batch_idx
-
 
 
                 # save the model
-                if ((current_epoch) % (self.save_every_for_model) == 0) and (batch_idx == 0):
-                    self.save_whole_model(batch_idx)
+                if (step_num+1) % self.save_every_for_model == 0:
+                    self.save_whole_model(step_num)
                     if self.verbose:
                         print(f"Model saved at epoch {current_epoch} and step {step_num}")
 
@@ -277,16 +303,26 @@ class Train:
                     # log the losses
                     if self.use_wandb:
                         if not self.use_BCE_classic_training:
-                            wandb.log({'train_loss': loss.item(),
-                                    'step': step_num,
-                                    'train_accuracy': train_accuracy,
-                                    'lr': optimizer.param_groups[0]['lr'],
-                                    'lambda_kl': criterion.lambda_kl,})
+                            if not self.output_losses_separately:
+                                wandb.log({'train_loss': loss.item(),
+                                           'step': step_num,
+                                           'train_accuracy': train_accuracy,
+                                           'lr': optimizer.param_groups[0]['lr'],
+                                           'lambda_kl': criterion.lambda_kl,})
+                            else:
+                                wandb.log({'train_loss': loss.item(),
+                                           'step': step_num,
+                                           'train_accuracy': train_accuracy,
+                                           'lr': optimizer.param_groups[0]['lr'],
+                                           'lambda_kl': criterion.lambda_kl,
+                                           'kl_loss': kl_loss.item(),
+                                           'reg_loss': reg_loss.item(),
+                                           'bce_loss': bce_loss.item()})
                         else:
                             wandb.log({'train_loss': loss.item(),
-                                    'step': step_num,
-                                    'train_accuracy': train_accuracy,
-                                    'lr': optimizer.param_groups[0]['lr']})
+                                       'step': step_num,
+                                       'train_accuracy': train_accuracy,
+                                       'lr': optimizer.param_groups[0]['lr']})
 
                     # print the loss and accuracy
                     if self.verbose:
@@ -294,6 +330,8 @@ class Train:
                         print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy}")
 
 
+                # increment the step number
+                step_num += 1
             
 
 
@@ -356,6 +394,9 @@ if __name__ == '__main__':
     
     parser.add_argument('--pretrained_resnet_cache_path', type=str, default='',
                         help='The relative path to save the pretrained model.')
+    
+    parser.add_argument('--pretrained_with_BCE_resnet_path', type=str, default='',
+                        help='The relative path to save the pretrained model with BCE loss.')
 
 
     # Dataset configuration
@@ -374,6 +415,9 @@ if __name__ == '__main__':
     
     parser.add_argument('--max_epochs', type=int, default=5000,
                         help='The number of max epochs for training.')
+    
+    parser.add_argument('--optimizer', type=str, default='SGD',
+                        help='The optimizer to use (SGD, Adam).')
     
     parser.add_argument('--learning_rate', type=float, default=0.004,
                         help='The learning rate for training.')
@@ -396,8 +440,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=2,
                         help='The number of workers for the dataloaders.')
 
-    parser.add_argument('--save_every_for_model', type=int, default=50,
-                        help='The number of epochs to save the model.')
+    parser.add_argument('--save_every_for_model', type=int, default=10000,
+                        help='The number of steps to save the model.')
     
     parser.add_argument('--logging_interval', type=int, default=100,
                         help='The number of iterations to log the informations.')
@@ -405,6 +449,8 @@ if __name__ == '__main__':
     parser.add_argument('--use_BCE_classic_training', type=str2bool, default=False,
                         help='Whether to use the classic BCE loss for training. If set true, the model will be trained with the classic BCE loss, ignoring the previous configuration choices.')
 
+    parser.add_argument('--output_losses_separately', type=str2bool, default=False,
+                        help='Whether to output the losses separately (KL, REG, BCE).' )
 
 
     # paths configurations
@@ -412,7 +458,7 @@ if __name__ == '__main__':
     parser.add_argument('--project_root', type=str, default=os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
                         help='The absolute path of the project root directory.')
     
-    parser.add_argument('--model_save_path', type=str, default='weights',
+    parser.add_argument('--model_save_path', type=str, default='exps',
                         help='The relative path to save the model.')
     
     parser.add_argument('--dataset_download_path', type=str, default='./data',
