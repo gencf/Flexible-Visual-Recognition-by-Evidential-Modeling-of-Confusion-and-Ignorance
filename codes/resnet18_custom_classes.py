@@ -95,8 +95,12 @@ class ResNet18_custom_class_number(nn.Module):
 
     # forward pass
     def forward(self,
-                x: torch.Tensor) -> torch.Tensor:
-        return self.last_activation(self.resnet18(x))
+                x: torch.Tensor,
+                output_without_last_activation: bool = False) -> torch.Tensor:
+        if not output_without_last_activation:
+            return self.last_activation(self.resnet18(x))
+        else:
+            return self.resnet18(x)
 
 
 
