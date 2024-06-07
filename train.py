@@ -64,6 +64,7 @@ class Train:
         self.logging_interval = config.logging_interval
         self.use_BCE_classic_training = config.use_BCE_classic_training
         self.output_losses_separately = config.output_losses_separately
+        self.auroc_metric_lib = config.auroc_metric_lib
         self.project_root = config.project_root
         self.model_save_path = config.model_save_path
         self.dataset_download_path = config.dataset_download_path
@@ -83,6 +84,17 @@ class Train:
         # check the optimizer
         if self.optimizer not in ['SGD', 'Adam']:
             raise ValueError('Invalid optimizer. Choose from SGD, Adam')
+        
+        # check the auROC metric library
+        if self.auroc_metric_lib not in ['torcheval', 'sklearn']:
+            raise ValueError('Invalid AUROC metric library. Choose from torcheval, sklearn')
+        
+
+        # save config file as a yaml file
+        if not os.path.exists(os.path.join(self.project_root, self.model_save_path, self.exp_name)):
+            os.makedirs(os.path.join(self.project_root, self.model_save_path, self.exp_name))
+        with open(os.path.join(self.project_root, self.model_save_path, self.exp_name, f"{self.exp_name}_config.yaml"), 'w') as file:
+            yaml.dump(vars(self), file)
         
 
         if not config.use_BCE_classic_training:
@@ -111,8 +123,9 @@ class Train:
                 print(f"Pretrained model (trained with BCE) loaded from: {self.pretrained_with_BCE_resnet_path}")
 
 
-        # create the auroc metric
-        self.auroc_metric = MulticlassAUROC(num_classes=self.n_classes)
+        if self.auroc_metric_lib == 'torcheval':
+            # create the auroc metric
+            self.auroc_metric = MulticlassAUROC(num_classes=self.n_classes)
         
         # print the model information
         if self.verbose:
@@ -139,9 +152,7 @@ class Train:
             os.makedirs(os.path.join(self.model_save_path, self.exp_name))
             
         
-        # save config file as a yaml file
-        with open(os.path.join(self.project_root, self.model_save_path, self.exp_name, f"{self.exp_name}_config.yaml"), 'w') as file:
-            yaml.dump(vars(self), file)
+
 
         
         # initialize wandb
@@ -223,6 +234,7 @@ class Train:
                                   lr=self.learning_rate,
                                   momentum=self.momentum,
                                   weight_decay=self.weight_decay)
+            
 
         
         # define the loss function
@@ -247,6 +259,9 @@ class Train:
 
         # set the model to train mode
         self.resnet18_classifier.train()
+
+        # define lr scheduler
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.max_epochs, eta_min=0.0001)
 
         # print info
         print(f"Starting training for {self.max_epochs} epochs with {len_dataset} samples.")
@@ -298,11 +313,21 @@ class Train:
                 train_accuracy = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)).detach().cpu() / self.train_batch_size
 
 
-                # calculate the AUROC
-                self.auroc_metric.update(F.softmax(y_pred, dim=1), y_true_not_one_hot)
-                train_auroc = self.auroc_metric.compute()
+                y_preds_softmax = F.softmax(y_pred, dim=1)
+                y_preds_softmax_max = torch.max(y_preds_softmax)
+                y_preds_softmax_min = torch.min(y_preds_softmax)
+                y_preds_normalized = (y_preds_softmax - y_preds_softmax_min) / (y_preds_softmax_max - y_preds_softmax_min)
 
-
+                try:
+                    # calculate the AUROC
+                    if self.auroc_metric_lib == 'torcheval':
+                        self.auroc_metric.update(y_preds_normalized, y_true_not_one_hot)
+                        train_auroc = self.auroc_metric.compute()
+                    elif self.auroc_metric_lib == 'sklearn':
+                        train_auroc = roc_auc_score(y_true.cpu().detach().numpy(), y_preds_normalized.cpu().detach().numpy(), multi_class="ovr", average="micro")
+                except:
+                    train_auroc = 0
+                    print("AUROC calculation failed.")
 
                 # save the model
                 if (step_num+1) % self.save_every_for_model == 0:
@@ -325,7 +350,7 @@ class Train:
                                            'lambda_kl': criterion.lambda_kl,})
                                 # print the loss and accuracy
                                 if self.verbose:
-                                    print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy*100:.2f}, Auroc: {train_auroc*100:.2f}")
+                                    print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy*100:.2f}% , Auroc: {train_auroc*100:.2f}% ")
                             else:
                                 wandb.log({'train_loss': loss.item(),
                                            'step': step_num,
@@ -338,7 +363,7 @@ class Train:
                                            'kl_loss': kl_loss.item()})
                                 # print the loss and accuracy
                                 if self.verbose:
-                                    print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f} (EDL:{edl_loss.item():.3f}, REG:{reg_loss.item():.3f}, KL:{kl_loss.item():.3f}), Accuracy: {train_accuracy*100:.2f}, Auroc: {train_auroc*100:.2f}")
+                                    print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f} (EDL:{edl_loss.item():.3f}, REG:{reg_loss.item():.3f}, KL:{kl_loss.item():.3f}), Accuracy: {train_accuracy*100:.2f}% , Auroc: {train_auroc*100:.2f}% ")
                         else:
                             wandb.log({'train_loss': loss.item(),
                                        'step': step_num,
@@ -347,7 +372,7 @@ class Train:
                                        'lr': optimizer.param_groups[0]['lr']})
                             # print the loss and accuracy
                             if self.verbose:
-                                print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy*100:.2f}, Auroc: {train_auroc*100:.2f}")
+                                print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy*100:.2f}% , Auroc: {train_auroc*100:.2f}% ")
 
                 # increment the step number
                 step_num += 1
@@ -359,6 +384,11 @@ class Train:
             test_loss = 0
             test_accuracy = 0
             test_auroc = 0
+
+            if self.output_losses_separately:
+                test_edl_loss = 0
+                test_reg_loss = 0
+                test_kl_loss = 0
 
             test_step_counter = 0
             for batch_idx, (inputs, y_true_not_one_hot) in enumerate(testloader):
@@ -380,25 +410,41 @@ class Train:
                                          epoch=current_epoch,
                                          return_losses_seperately=False)
                     else:
-                        kl_loss, reg_loss, bce_loss = criterion(plausibility=F.sigmoid(y_pred),
+                        edl_loss, reg_loss, kl_loss = criterion(plausibility=F.sigmoid(y_pred),
                                                                 y_true=y_true,
                                                                 epoch=current_epoch,
                                                                 return_losses_seperately=True)
-                        loss = kl_loss + reg_loss + bce_loss
+                        loss = edl_loss + reg_loss + kl_loss
+
+                        test_edl_loss += edl_loss.item()
+                        test_reg_loss += reg_loss.item()
+                        test_kl_loss += kl_loss.item()
                 else:
                     loss = criterion(F.softmax(y_pred, dim=1), y_true)
 
                 # calculate the top-1 accuracy
-                test_accuracy = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)).detach().cpu() / self.test_batch_size
+                test_accuracy_step = torch.sum(y_pred.argmax(dim=1) == y_true.argmax(dim=1)).detach().cpu() / self.test_batch_size
 
-                # calculate the AUROC
-                self.auroc_metric.update(F.softmax(y_pred, dim=1), y_true_not_one_hot)
-                test_auroc = self.auroc_metric.compute()
+                y_preds_softmax = F.softmax(y_pred, dim=1)
+                y_preds_softmax_max = torch.max(y_preds_softmax)
+                y_preds_softmax_min = torch.min(y_preds_softmax)
+                y_preds_normalized = (y_preds_softmax - y_preds_softmax_min) / (y_preds_softmax_max - y_preds_softmax_min)
 
+
+                try:
+                    # calculate the AUROC
+                    if self.auroc_metric_lib == 'torcheval':
+                        self.auroc_metric.update(y_preds_normalized, y_true_not_one_hot)
+                        test_auroc_step = self.auroc_metric.compute()
+                    elif self.auroc_metric_lib == 'sklearn':
+                        test_auroc_step = roc_auc_score(y_true.cpu().detach().numpy(), y_preds_normalized.cpu().detach().numpy(), multi_class="ovr", average="micro")
+                except:
+                    test_auroc_step = 0
+                    print("AUROC calculation failed.")
                 
                 test_loss += loss.item()
-                test_accuracy += test_accuracy
-                test_auroc += test_auroc
+                test_accuracy += test_accuracy_step
+                test_auroc += test_auroc_step
 
                 test_step_counter += 1
             
@@ -409,23 +455,32 @@ class Train:
                         wandb.log({'test_loss': test_loss/test_step_counter,
                                    'test_accuracy': test_accuracy/test_step_counter,
                                    'test_auroc': test_auroc/test_step_counter})
+                        # print the test loss and accuracy
+                        if self.verbose:
+                            print(f"\nTest Loss: {test_loss/test_step_counter:.3f}, Test Accuracy: {test_accuracy/test_step_counter*100:.2f}% , Test AUROC: {test_auroc/test_step_counter*100:.2f}% \n")
                     else:
                         wandb.log({'test_loss': test_loss/test_step_counter,
                                    'test_accuracy': test_accuracy/test_step_counter,
                                    'test_auroc': test_auroc/test_step_counter,
-                                   'kl_loss': kl_loss.item(),
-                                   'reg_loss': reg_loss.item(),
-                                   'bce_loss': bce_loss.item()})
+                                   'test_edl_loss': test_edl_loss/test_step_counter,
+                                   'test_reg_loss': test_reg_loss/test_step_counter,
+                                   'test_kl_loss': test_kl_loss/test_step_counter})
+                        # print the test loss and accuracy
+                        if self.verbose:
+                            print(f"\nTest Loss: {test_loss/test_step_counter:.3f} (EDL:{test_edl_loss/test_step_counter:.3f}, REG:{test_reg_loss/test_step_counter:.3f}, KL:{test_kl_loss/test_step_counter:.3f}), Test Accuracy: {test_accuracy/test_step_counter*100:.2f}% , Test AUROC: {test_auroc/test_step_counter*100:.2f}% \n")
+                    wandb.log({'test_loss': test_loss/test_step_counter,
+                               'test_accuracy': test_accuracy/test_step_counter,
+                               'test_auroc': test_auroc/test_step_counter})
                 else:
                     wandb.log({'test_loss': test_loss/test_step_counter,
                                'test_accuracy': test_accuracy/test_step_counter,
                                'test_auroc': test_auroc/test_step_counter})
-            
-            # print the test loss and accuracy
-            if self.verbose:
-                print(f"\nTest Loss: {test_loss/test_step_counter:.3f}, Test Accuracy: {test_accuracy/test_step_counter*100:.2f}, Test AUROC: {test_auroc/test_step_counter*100:.2f}\n")
+                    # print the test loss and accuracy
+                    if self.verbose:
+                        print(f"\nTest Loss: {test_loss/test_step_counter:.3f}, Test Accuracy: {test_accuracy/test_step_counter*100:.2f}% , Test AUROC: {test_auroc/test_step_counter*100:.2f}% \n")
 
-
+            # step the scheduler
+            scheduler.step()
 
 
 
@@ -453,6 +508,8 @@ if __name__ == '__main__':
         
     # create the parser
     parser = argparse.ArgumentParser(description='Train the model')
+
+
 
 
     # add the arguments
@@ -516,7 +573,7 @@ if __name__ == '__main__':
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='The momentum for training.')
     
-    parser.add_argument('--weight_decay', type=float, default=0.0001,
+    parser.add_argument('--weight_decay', type=float, default=0.0005,
                         help='The weight decay for training.')
     
     parser.add_argument('--max_lambda_kl', type=float, default=0.05,
@@ -541,7 +598,10 @@ if __name__ == '__main__':
                         help='Whether to use the classic BCE loss for training. If set true, the model will be trained with the classic BCE loss, ignoring the previous configuration choices.')
 
     parser.add_argument('--output_losses_separately', type=str2bool, default=False,
-                        help='Whether to output the losses separately (KL, REG, BCE).' )
+                        help='Whether to output the losses separately (KL, REG, BCE).')
+    
+    parser.add_argument('--auroc_metric_lib', type=str, default='sklearn',
+                        help='The library to use for AUROC metric (torcheval, sklearn).')
 
 
     # paths configurations
