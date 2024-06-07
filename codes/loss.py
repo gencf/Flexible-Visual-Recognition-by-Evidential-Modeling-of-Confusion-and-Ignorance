@@ -33,6 +33,7 @@ class custom_loss(nn.Module):
                 plausibility,
                 y_true,
                 epoch=-1,
+                return_losses_seperately=False,
                 epsilon=1e-6):
         """
         Forward pass of the custom loss function
@@ -76,8 +77,10 @@ class custom_loss(nn.Module):
         # calculate the KL loss
         loss_KL = self.calculate_KL_loss(dirichlet_parameters, y_true, plausibility)
 
-
-        return torch.mean(loss_EDL) + self.lambda_reg * torch.mean(loss_REG) + self.lambda_kl * torch.mean(loss_KL)
+        if return_losses_seperately:
+            return torch.mean(loss_EDL), self.lambda_reg * torch.mean(loss_REG), self.lambda_kl * torch.mean(loss_KL)
+        else:
+            return torch.mean(loss_EDL) + self.lambda_reg * torch.mean(loss_REG) + self.lambda_kl * torch.mean(loss_KL)
 
 
 
