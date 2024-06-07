@@ -43,11 +43,12 @@ class custom_loss(nn.Module):
         inverse_plausibility = 1 - plausibility
 
 
-        # create a mask to mask the diagonal elements with ones
-        mask = torch.eye(self.n_classes).to(plausibility.device)
-
         # calculate beliefs (class plausibility times product of inverse plausibilities of each other class)
-        beliefs = (mask + (plausibility.unsqueeze(1) * inverse_plausibility.unsqueeze(2)) * (1 - mask)).prod(dim=1)
+        beliefs = torch.clone(plausibility)
+
+        for i in range(1, self.n_classes):
+            # shift the inverse plausibility tensor by i
+            beliefs = beliefs * torch.roll(inverse_plausibility, shifts=i, dims=1)
 
 
         # calculate the uncertainity (1 - sum of beliefs)
@@ -128,22 +129,23 @@ class custom_loss(nn.Module):
         # change the true class label index of dirichlet parameters to 1
         dirichlet_parameters_for_KL = y_true + (1-y_true) * dirichlet_parameters
 
-            
 
 
         # get the alpha sum 
         alpha_sum = torch.sum(dirichlet_parameters_for_KL, dim=1, keepdim=True)
 
+        # create ones
+        ones = torch.ones([1, dirichlet_parameters_for_KL.shape[-1]], dtype=torch.float32, device=dirichlet_parameters_for_KL.device)
 
         # calculate the log (...) part which includes gamma functions with logarithms
         loss_KL_log_gamma_part = torch.lgamma(alpha_sum) + \
-                                 torch.lgamma(torch.ones_like(plausibilities)).sum(dim=1, keepdim=True) + \
-                                 (- torch.lgamma(torch.ones_like(plausibilities).sum(dim=1, keepdim=True))) + \
+                                 torch.lgamma(ones).sum(dim=1, keepdim=True) + \
+                                 (- torch.lgamma(ones.sum(dim=1, keepdim=True))) + \
                                  (- torch.lgamma(dirichlet_parameters_for_KL).sum(dim=1, keepdim=True))
         
         
         # calculate the part with digamma functions
-        loss_KL_digamma_part = ((dirichlet_parameters_for_KL - 1) * (torch.digamma(dirichlet_parameters_for_KL) - torch.digamma(alpha_sum))).sum(dim=1, keepdim=True)
+        loss_KL_digamma_part = ((dirichlet_parameters_for_KL - ones).mul(torch.digamma(dirichlet_parameters_for_KL) - torch.digamma(alpha_sum))).sum(dim=1, keepdim=True)
 
 
         return torch.sum(loss_KL_log_gamma_part + loss_KL_digamma_part, dim=1)
@@ -168,14 +170,14 @@ def calculate_only_belief_uncertainity_ignorance_confusion(plausibilities):
     # calculate (1-plausibility) for each class
     inverse_plausibility = 1 - plausibilities
 
-    # create a mask to mask the diagonal elements with ones
-    mask = torch.eye(n_classes).to(plausibilities.device)
 
     # calculate beliefs (class plausibility times product of inverse plausibilities of each other class)
-    beliefs = (mask + (plausibilities.unsqueeze(1) * inverse_plausibility.unsqueeze(2)) * (1 - mask)).prod(dim=1)
+    beliefs = torch.clone(plausibilities)
 
-    # mask the diagonal elements
-
+    for i in range(n_classes):
+        for j in range(n_classes):
+            if i != j:
+                beliefs[:, i] = beliefs[:, i] * inverse_plausibility[:, j]
 
 
     # calculate the uncertainity (1 - sum of beliefs)
