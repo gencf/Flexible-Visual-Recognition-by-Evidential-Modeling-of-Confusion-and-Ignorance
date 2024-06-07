@@ -110,7 +110,7 @@ class Train:
 
 
         # create the auroc metric
-        auroc_metric = MulticlassAUROC(num_classes=self.n_classes)
+        self.auroc_metric = MulticlassAUROC(num_classes=self.n_classes)
         
         # print the model information
         if self.verbose:
@@ -263,24 +263,25 @@ class Train:
                 # zero the gradients
                 optimizer.zero_grad()
 
+
                 # forward pass
-                y_pred = self.resnet18_classifier(inputs)
+                y_pred = self.resnet18_classifier(inputs, output_without_last_activation=True)
 
                 # calculate the loss
                 if not self.use_BCE_classic_training:
                     if not self.output_losses_separately:
-                        loss = criterion(plausibility=y_pred,
+                        loss = criterion(plausibility=nn.Sigmoid(y_pred),
                                          y_true=y_true,
                                          epoch=current_epoch,
                                          return_losses_seperately=False)
                     else:
-                        kl_loss, reg_loss, bce_loss = criterion(plausibility=y_pred,
+                        kl_loss, reg_loss, bce_loss = criterion(plausibility=nn.Sigmoid(y_pred),
                                                                 y_true=y_true,
                                                                 epoch=current_epoch,
                                                                 return_losses_seperately=True)
                         loss = kl_loss + reg_loss + bce_loss
                 else:
-                    loss = criterion(y_pred, y_true)
+                    loss = criterion(nn.Softmax(dim=1)(y_pred), y_true)
 
                 # backward pass
                 loss.backward()
@@ -294,7 +295,7 @@ class Train:
 
 
                 # calculate the AUROC
-                self.auroc_metric.update(y_pred, y_true_not_one_hot)
+                self.auroc_metric.update(nn.Softmax(dim=1)(y_pred), y_true_not_one_hot)
                 train_auroc = self.auroc_metric.compute()
 
 
@@ -338,7 +339,7 @@ class Train:
                     # print the loss and accuracy
                     if self.verbose:
                         # update the progress bar
-                        print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy}")
+                        print(f"Epoch: {current_epoch}, Step: {step_num}, Loss: {loss.item():.3f}, Accuracy: {train_accuracy*100:.2f}, Auroc: {train_auroc*100:.2f}")
 
 
                 # increment the step number
