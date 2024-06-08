@@ -204,7 +204,7 @@ We use weights to balance the losses. We gradually increase the effect of $L_{KL
 
 ## 2.2. Our interpretation 
 
-!!! When we tried to traind the models from scratch, the KL loss and REG loss were started and remained as 0, causing the model to learn nothing. We investigated the reason and concluded that it is due to the very low initial outputs of the model. Since all outputs are very low and similar in the beginning, the confusion results are computed very close (or equal to) 1, which prevents the model to improve.
+!!! When we tried to trained the models from scratch, the KL loss and REG loss were started and remained as 0, causing the model to learn nothing. We investigated the reason and concluded that it is due to the very low initial outputs of the model. Since all outputs are very low and similar in the beginning, the confusion results are computed very close (or equal to) 1, which prevents the model to improve.
 
 To solve this issue, we developed a method where we initially train a model with cross-entropy loss for a few epochs to get the model to have some somehow not bad initial guesses. This allowed the model to learn and improve, which yielded the results we optained. However, we don't know what exactly the authors did to overcome this issue.
 
@@ -399,5 +399,6 @@ However, the interpretation of dividing the uncertainty into confusion and ignor
 
 # Contact
 
-@TODO: Provide your names & email addresses and any other info with which people can contact you.
+* Furkan Genç, genc.furkan@metu.edu.tr 
+* Umut Özyurt, umut.ozyurt@metu.edu.tr
 
