@@ -34,7 +34,7 @@ global_step = 1
 acc = 0
 best_acc = 0  # best test accuracy
 best_acc_epoch = 0 # best test accuracy epoch
-start_epoch = 0  # start from epoch 0 or last checkpoint epoch
+start_epoch = 1  # start from epoch 0 or last checkpoint epoch
 save_path = args.save_path
 model_path = args.model_path
 dataset = args.dataset
@@ -138,7 +138,7 @@ if args.mode == 'train' and args.resume:
     checkpoint = torch.load(model_path)
     net.load_state_dict(checkpoint['net'])
     acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
+    start_epoch = checkpoint['epoch'] + 1
     best_acc = checkpoint['best_acc']
     best_acc_epoch = checkpoint['best_acc_epoch']
 
@@ -314,7 +314,7 @@ if args.mode == 'train':
         f.write(s)
         f.write('\n')
 
-    for epoch in range(start_epoch + 1, max_num_epochs + 1):
+    for epoch in range(start_epoch, max_num_epochs + 1):
         train(epoch)
         test(epoch)
         scheduler.step()
