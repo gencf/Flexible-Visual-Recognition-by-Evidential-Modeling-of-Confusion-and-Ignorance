@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from codes.loss import custom_loss
-from codes.loss import calculate_only_belief_uncertainity_ignorance_confusion
+from loss import custom_loss
+from loss import calculate_only_belief_uncertainity_ignorance_confusion
 
 def get_n_classes_2d_toy_dataset(n_classes: int = 3,
                                  n_samples_per_class: int = 500,
@@ -301,19 +301,12 @@ def plot_ignorance_uncertainity_confusion(model,
     # get the predictions
     with torch.no_grad():
         y_pred = model.to(device)(X_grid_tensor)
-        
 
         # get the beliefs, uncertainity, ignorance, confusion
         beliefs, uncertainity, ignorance, confusion = calculate_only_belief_uncertainity_ignorance_confusion(plausibilities=y_pred)
     
-
-
-
-    
     # plot the decision boundaries for uncertainity, ignorance, and confusion
     plt.figure(figsize=(15, 5), layout = 'constrained')
-
-
 
     # plot the uncertainity
     plt.subplot(1, 3, 1)
@@ -329,7 +322,6 @@ def plot_ignorance_uncertainity_confusion(model,
         
     plt.title("uncertainity")
 
-    
     # plot the ignorance
     plt.subplot(1, 3, 2)
     ignorance = ignorance.reshape(xx.shape)
@@ -364,19 +356,11 @@ def plot_ignorance_uncertainity_confusion(model,
     # add the colorbar to the plots (without making the plots smaller
     plt.colorbar()
     
-
-
-
-
-
     # save the plot
     if save_path:
         plt.savefig(save_path)
     
     plt.show()
-
-
-
 
 
 def train_model_for_toy_dataset(
