@@ -1,3 +1,4 @@
+import os
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,6 +7,17 @@ import torch.nn as nn
 import torch.optim as optim
 from loss import custom_loss
 from loss import calculate_only_belief_uncertainity_ignorance_confusion
+
+
+def remove_module_name_from_model(model_state_dict):
+    """
+    Remove the module name from the model
+    """
+    new_state_dict = {}
+    for key, value in model_state_dict.items():
+        new_key = key.replace("module.", "")
+        new_state_dict[new_key] = value
+    return new_state_dict
 
 def get_n_classes_2d_toy_dataset(n_classes: int = 3,
                                  n_samples_per_class: int = 500,
@@ -491,3 +503,179 @@ if __name__ == '__main__':
                                         shuffle=True)
     plot_2d_toy_dataset(X, y)
 
+
+
+
+def plot_test_confusion_ignorance_for_samples_with_images_cifar_10(
+    testset,
+    model,
+    device,
+    cifar_10_classes,
+    save_path="",
+    images_to_plot_count_width = 3,
+    images_to_plot_count_height = 10,
+    uncertainty_threshold = 0.7,
+    confusion_threshold = 0.3,
+    ignorance_threshold = 0.5,
+):
+    # iterate over the test set
+    images_to_plot_count_width = 3
+    images_to_plot_count_height = 10
+
+    images_to_plot_count = images_to_plot_count_width * images_to_plot_count_height
+
+    confusion_rows_to_pick = images_to_plot_count_height//2
+    ignorance_rows_to_pick = images_to_plot_count_height - confusion_rows_to_pick
+
+    confusion_samples_to_pick = confusion_rows_to_pick * images_to_plot_count_width
+    ignorance_samples_to_pick = ignorance_rows_to_pick * images_to_plot_count_width
+
+
+
+    # set the model to device
+    model.to(device)
+
+    # get length of the test set
+    test_image_count = len(testset)
+
+    # get a random index list
+    random_indices = random.sample(range(test_image_count), test_image_count)
+
+    # create a figure with test_image_count subplots
+    fig, axs = plt.subplots(images_to_plot_count_height, images_to_plot_count_width, figsize=(5*images_to_plot_count_width, 5*images_to_plot_count_height))
+
+
+    # uncertainty threshold
+    uncertainty_threshold = 0.7
+    confusion_threshold = 0.3
+    ignorance_threshold = 0.5
+    fig_title = f"Images with high confusion or ignorance (class: plausibility (belief))\n(top {confusion_rows_to_pick} rows: high confusion, bottom {ignorance_rows_to_pick} rows: high ignorance)"
+    fig.suptitle(fig_title, fontsize=16)
+
+    # flatten the axs
+    axs = axs.flatten()
+
+    plotted_image_count = 0
+    confusion_samples_picked = 0
+    ignorance_samples_picked = 0
+
+
+    with torch.no_grad():
+        for i, data in enumerate(random_indices):
+            data = testset[data]
+
+            if plotted_image_count == images_to_plot_count:
+                break
+
+            image, label = data
+            image = image.unsqueeze(0).to(device)
+            label = torch.tensor([label]).to(device)
+
+            # forward pass
+            output = model(image)
+
+            # pass the output through sigmoid
+            output = torch.sigmoid(output)
+
+            # calculate only belief, uncertainity, ignorance and confusion
+            belief, uncertainity, ignorance, confusion = calculate_only_belief_uncertainity_ignorance_confusion(output)
+
+            if (confusion.item() > confusion_threshold or ignorance.item() > ignorance_threshold):
+                if (confusion.item() > confusion_threshold and confusion_samples_picked < confusion_samples_to_pick):
+                    confusion_samples_picked += 1
+                elif (ignorance.item() > ignorance_threshold and ignorance_samples_picked < ignorance_samples_to_pick and confusion_samples_picked == confusion_samples_to_pick):
+                    ignorance_samples_picked += 1
+                else:
+                    continue
+
+
+                # get top 3 classes with highest scores, and their beliefs and scores
+                # argsort the output
+                _, indices = torch.sort(output, descending=True)
+
+                # get the top 5 classes
+                top_3_classes = indices[0][:3]
+
+                # get the top 5 classes' scores
+                top_3_scores = output[0][top_3_classes]
+
+                # get the top 5 classes' beliefs
+                top_3_beliefs = belief[0][top_3_classes]
+
+                # plot the image (de-normalize it first)
+                image = image.squeeze(0).cpu().numpy()
+                image = image.transpose((1, 2, 0))
+                image = image * [0.2471, 0.2435, 0.2616] + [0.4914, 0.4822, 0.4465]
+                
+                # make it 0 to 255
+                image = (image * 255).astype(int)
+
+                axs[plotted_image_count].imshow(image)
+                
+
+                # from the sorted indices, get the index of the element which is equal to the true label
+                label_index = (indices[0] == label).nonzero(as_tuple=True)[0]
+
+                # add the true class and its score with a text ( on the left side of the image)
+                text = f"Ground Truth: {cifar_10_classes[label.item()]}\n(plausibility: {output[0][label.item()].item():.2f})\n\n"
+
+                axs[plotted_image_count].text(32, 5, text, fontsize=12, verticalalignment='center', color='green')
+
+                # add the prediction order
+                text = f"Ground truth is\n {label_index.item() + 1}. prediction"
+                if (label_index.item() == 0):
+                    axs[plotted_image_count].text(32, 10, text, fontsize=12, verticalalignment='center', color='green')
+                else:
+                    axs[plotted_image_count].text(32, 10, text, fontsize=12, verticalalignment='center', color='red')
+
+
+                # add the top 5 classes and their scores with a text ( on the right side of the image)
+                text = "Top 3 Predictions:\n"
+                for j, (class_index, score, belief) in enumerate(zip(top_3_classes, top_3_scores, top_3_beliefs)):
+                    text += f"{cifar_10_classes[class_index]}: {score:.2f} ({belief:.2f})\n"
+                
+                axs[plotted_image_count].text(32, 17, text, fontsize=12, verticalalignment='center')
+
+                # add uncertainty, ignorance and confusion to the text
+                text = f"Uncertainity: {uncertainity.item():.2f}"
+
+                if (uncertainity.item() < uncertainty_threshold):
+                    axs[plotted_image_count].text(32, 23, text, fontsize=12, verticalalignment='center')
+                else:
+                    axs[plotted_image_count].text(32, 23, text, fontsize=12, verticalalignment='center', color='red')
+
+
+                text = f"Ignorance: {ignorance.item():.2f}"
+
+                if (ignorance.item() < ignorance_threshold):
+                    axs[plotted_image_count].text(32, 26, text, fontsize=12, verticalalignment='center')
+                else:
+                    axs[plotted_image_count].text(32, 26, text, fontsize=12, verticalalignment='center', color='red')
+
+
+                text = f"Confusion: {confusion.item():.2f}"
+                if (confusion.item() < confusion_threshold):
+                    axs[plotted_image_count].text(32, 29, text, fontsize=12, verticalalignment='center')
+                else:
+                    axs[plotted_image_count].text(32, 29, text, fontsize=12, verticalalignment='center', color='red')
+
+
+
+                # remove the axis
+                axs[plotted_image_count].axis('off')
+
+                plotted_image_count += 1
+
+    model.to('cpu')
+
+    plt.tight_layout()
+
+    # save the plot
+    if save_path != "":
+        # if the save path folder not exists, create it
+        save_folder = os.path.dirname(save_path)
+        if not os.path.exists(save_folder):
+            os.makedirs(save_folder)
+        plt.savefig(save_path)
+    
+    plt.show()
