@@ -34,11 +34,6 @@ Please see the Jupyter notebook file [train_toy_dataset.ipynb](train_toy_dataset
     pip install -r requirements.txt
     ```
 
-5. **Download the necessary data**:
-    ```bash
-    bash download_data.sh
-    ```
-
 ## Usage
 
 ### Train a model with CrossEntropyLoss on CIFAR10 dataset for 200 epochs
