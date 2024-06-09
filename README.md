@@ -4,11 +4,11 @@ This readme file is an outcome of the [CENG502 (Spring 2024)](https://ceng.metu.
 
 # 1. Introduction
 
-This project is a reproduction of the paper titled “Flexible Visual Recognition by Evidential Modeling of Confusion and Ignorance”, which was published in the International Conference on Computer Vision (ICCV) in 2023. The paper tackles the inherent difficulties in visual recognition systems, specifically the frequent errors in classifying known categories and the system’s tendency to incorrectly handle images that don’t belong to any of the classes it has been trained on. The goal of this project is to reproduce the results presented in the paper, specifically focusing on the experiments conducted on the CIFAR-10 and CIFAR-100 datasets, and verify the effectiveness of the proposed method.
+This project is a reproduction of the paper titled "Flexible Visual Recognition by Evidential Modeling of Confusion and Ignorance", which was published at the International Conference on Computer Vision (ICCV) in 2023. The paper tackles the inherent difficulties in visual recognition systems, specifically the frequent errors in classifying known categories and the system's tendency to incorrectly handle images that don't belong to any of the classes it has been trained on. The goal of this project is to reproduce the results presented in the paper, specifically focusing on the experiments conducted on the CIFAR-10 and CIFAR-100 datasets, and verify the effectiveness of the proposed method.
 
 ## 1.1. Paper summary
 
-The paper presents a novel method that enhances the capabilities of a visual recognition system by allowing it to explicitly express uncertainty and source trust. This is particularly important in real-world scenarios where the input can be unpredictable and varied, and the system needs to make decisions based on incomplete or ambiguous information.
+The paper presents a novel method that enhances the capabilities of a visual recognition system by allowing it to express uncertainty and source trust explicitly. This is particularly important in real-world scenarios where the input can be unpredictable and varied, and the system needs to make decisions based on incomplete or ambiguous information.
 
 The authors focus on two types of uncertainties: confusion and ignorance. Confusion refers to the uncertainty that arises when the system has difficulty distinguishing between different classes. Ignorance, on the other hand, refers to the uncertainty that arises when the system encounters unfamiliar or out-of-distribution data. These uncertainties are quantified using Subjective Logic.
 
@@ -20,7 +20,7 @@ The effect of these uncertainties can be seen in Figure 1, where the system dete
   <em>Figure 1: Classification, confusion and ignorance values for<br> Known->Confusion->Known->Ignorance image transformation with Mixup <br>for illustrative purposes <i>(from the paper)</i>.</em>
 </p>
 
-To handle these uncertainties, the authors propose predicting Dirichlet concentration parameters for singletons, which they refer to as “subjective opinions”. These subjective opinions enable the system to make more flexible decisions, enhancing its adaptability and performance in visual recognition tasks. For instance, if the system is unsure about a particular classification (the decision is in the <i>reject interval</i> as it can be seen in the Figure 2), it can express this uncertainty and potentially defer the decision to a human operator or request additional information.
+To handle these uncertainties, the authors propose predicting Dirichlet concentration parameters for singletons, which they refer to as "subjective opinions". These subjective opinions enable the system to make more flexible decisions, enhancing its adaptability and performance in visual recognition tasks. For instance, if the system is unsure about a particular classification (the decision is in the <i>reject interval</i>, as can be seen in Figure 2), it can express this uncertainty and potentially defer the decision to a human operator or request additional information.
 
 <p align="center">
   <img src="figures/confusion_and_ignorance_2.png" alt="Belief, confusion and ignorance intervals figure" width="90%">
@@ -28,7 +28,7 @@ To handle these uncertainties, the authors propose predicting Dirichlet concentr
   <em>Figure 2: Belief, confusion and ignorance as intervals. <i>(from the paper)</i>.</em>
 </p>
 
-The effectiveness of the proposed method is demonstrated through a series of experiments. In synthetic data analysis, the method is shown to effectively separate confusion and ignorance, providing a clear indication of the source of uncertainty, which can be observed in Figure 3. In visual recognition tasks, the method improves the system’s ability to correctly classify images, even in the presence of confusion and ignorance. In open-set detection tasks, the method effectively identifies out-of-distribution data, demonstrating its robustness and adaptability.
+The effectiveness of the proposed method is demonstrated through a series of experiments. In synthetic data analysis, the method is shown to effectively separate confusion and ignorance, providing a clear indication of the source of uncertainty, which can be observed in Figure 3. In visual recognition tasks, the method improves the system's ability to correctly classify images, even in the presence of confusion and ignorance. In open-set detection tasks, the method effectively identifies out-of-distribution data, demonstrating its robustness and adaptability.
 
 
 <p align="center">
@@ -37,7 +37,7 @@ The effectiveness of the proposed method is demonstrated through a series of exp
   <em>Figure 3: Synthetic data experiment results <i>(from the paper)</i>.</em>
 </p>
 
-The authors also compare their method with existing approaches and show that it outperforms them in various aspects. They argue that traditional methods, such as softmax, may not be suitable for deriving confusion from probability after training, and that the proposed method provides a more effective solution.
+The authors also compare their method with existing approaches and show that it outperforms them in various aspects. They argue that traditional methods, such as softmax, may not be suitable for deriving confusion from probability after training. The proposed method provides a more effective solution.
 
 In conclusion, the paper introduces a unique approach to handling uncertainties in visual recognition systems, providing a significant contribution to the field. The proposed method not only improves the performance of the system but also enhances its adaptability and robustness by enabling more informed and dynamic decision-making, which provides a more suitable and flexible approach in terms of real-world applications.
 
@@ -47,7 +47,7 @@ In conclusion, the paper introduces a unique approach to handling uncertainties 
 
 The original method proposed in the paper is a novel approach to handle uncertainties in visual recognition systems using the theory of Subjective Logic. This theory allows the system to express uncertainty and source trust explicitly, which is crucial in real-world scenarios where the input can be unpredictable and varied.
 
-In the paper, it is modeled that the uncertainty $U$ for each sample $x$ comes from two seperate sources, i.e., confusion $C$ and ignorance $I$. This is represented as:
+In the paper, it is modeled that the uncertainty $U$ for each sample $x$ comes from two separate sources, i.e., confusion $C$ and ignorance $I$. This is represented as:
 
 $$U^x = C^x + I^x$$
 
@@ -64,7 +64,7 @@ The belief for any proposition is then calculated as the summation of contained 
 $$b_A = \sum_{B, B \subseteq A} b_B$$
 
 
-And also, we have the uncertainty $U$ as:
+Also, we have the uncertainty $U$ as:
 
 $$U = 1 - \sum_{i=1}^{K} b_i$$
 
@@ -86,13 +86,13 @@ This type of uncertainty arises when the system finds it challenging to make a c
 $$C = \sum_{A, A \in 2^{\Theta}, 2 \leq |A| \leq K} b_A$$
 
 
-Additionally, we can seperate the confusion as class-related confusion and class-unrelated confusion. They are defined for class $i$ as:
+Additionally, we can separate the confusion into class-related confusion and class-unrelated confusion. They are defined for class $i$ as:
 
 $$C_{i} = \sum_{A, A \in 2^{\Theta}, 2 \leq |A| \leq K, i \bigcap A = i} b_A$$
 
 $$C_{\neg i} = \sum_{A, A \in 2^{\Theta}, 2 \leq |A| \leq K, i \bigcap A \neq i} b_A$$
 
-where:
+Where:
 
 $$C =  C_i + C_{\neg i}$$
 
@@ -103,15 +103,15 @@ $$pl_i = b_i + C_i$$
 
 
 
-In the Figure 2, you can see the relation between belief, class-related confusion and plausibility values, where plausibility ($pl$) is equal to belief ($b$) summed with the class-related confusion ($C_i$).
+In Figure 2, you can see the relation between belief, class-related confusion, and plausibility values, where plausibility ($pl$) is equal to belief ($b$) summed with the class-related confusion ($C_i$).
 
 
 
 2. **Ignorance**:
 
-This type of uncertainty comes into play when the system encounters an input that is entirely outside its training distribution. In such cases, the system lacks any relevant evidence to base a decision on, leading to high ignorance.
+This type of uncertainty comes into play when the system encounters an input that is entirely outside its training distribution. In such cases, the system lacks any relevant evidence on which to base a decision, leading to high ignorance.
 
-We define the plausiblity function (which will be crucial soon) for class $i$ as:
+We define the plausibility function (which will be crucial soon) for class $i$ as:
 
 $$f_i(x) = (pl_i, 1 - pl_i)$$
 
@@ -140,7 +140,7 @@ The ignorance I, therefore, could be regarded as
 the mass placed on the empty set $\emptyset$ in the frame, which indicates the level of lacking evidence.
 
 
-The demonstration of the combination process with 2 and 3 class exaples are in the Figure 4 below:
+The demonstration of the combination process with 2 and 3 class examples is in Figure 4 below:
 
 <p align="center">
   <img src="figures/belief_function.png" alt="Demonstration" width="90%">
@@ -149,17 +149,17 @@ The demonstration of the combination process with 2 and 3 class exaples are in t
 </p>
 
 
-To model these uncertainties, the method predicts Dirichlet concentration parameters for singletons. In the context of Subjective Logic, a singleton is a set with only one element. These predictions allow the system to form what the authors call “subjective opinions”.
+To model these uncertainties, the method predicts Dirichlet concentration parameters for singletons. In the context of Subjective Logic, a singleton is a set with only one element. These predictions allow the system to form what the authors call "subjective opinions".
 
-A subjective opinion in this context is a type of probabilistic estimate that provides a probability for each possible outcome, along with an estimate of the uncertainty of these probabilities. This dual nature of subjective opinions allows the system to express nuanced views like “I think this image is probably of a cat, but I’m not very sure”.
+A subjective opinion in this context is a type of probabilistic estimate that provides a probability for each possible outcome, along with an estimate of the uncertainty of these probabilities. This dual nature of subjective opinions allows the system to express nuanced views like "I think this image is probably of a cat, but I'm not very sure".
 
-By forming these subjective opinions, the system can make more flexible decisions. For example, if the system is very uncertain (high confusion), it can decide to predict multiple classes instead of just one. If the system doesn’t have any relevant evidence (high ignorance), it can decide to reject making a prediction altogether.
+By forming these subjective opinions, the system can make more flexible decisions. For example, if the system is very uncertain (high confusion), it can decide to predict multiple classes instead of just one. If the system doesn't have any relevant evidence (high ignorance), it can decide to reject making a prediction altogether.
 
-This approach allows the system to handle the complexities and uncertainties of real-world visual recognition tasks more effectively, enhancing its adaptability and performance. It’s a significant step forward in the field of visual recognition, paving the way for more robust and flexible systems.
+This approach allows the system to handle the complexities and uncertainties of real-world visual recognition tasks more effectively, enhancing its adaptability and performance. It's a significant step forward in the field of visual recognition, paving the way for more robust and flexible systems.
 
 In terms of methodology, the paper uses the theory of Subjective Logic to model the uncertainties. The recognition process is regarded as an evidence-collecting process where confusion is defined as conflicting evidence, while ignorance is the absence of evidence. By predicting Dirichlet concentration parameters for singletons, comprehensive subjective opinions, including confusion and ignorance, could be achieved via further evidence combinations.
 
-The paper proposes to decompose the problem into $K$ plausibility functions $f_i(\cdot)$ for $i = 1, . . . , K$ on the same frame. Each plausibility function $f_i(\cdot)$ is designed to give two predictions only considering class $i$, which is written as $f_i(x) = (pl_i, 1 - pl_i)$. The computational complexity is $O(n)$ and we could only calculate necessary confusion terms for specific conditions.
+The paper proposes to decompose the problem into $K$ plausibility functions $f_i(\cdot)$ for $i = 1, . . . , K$ on the same frame. Each plausibility function $f_i(\cdot)$ is designed to give two predictions only considering class $i$, which is written as $f_i(x) = (pl_i, 1 - pl_i)$. The computational complexity is $O(n)$, and we can only calculate the necessary confusion terms for specific conditions.
 
 
 
@@ -181,7 +181,7 @@ $α$ is calculated directly from singleton beliefs and overall uncertainty, diff
 
 $$α_{i}=KU_{b_{i}}+1=\dfrac{1-\sum_{j=1}^{K}{b_{j}}}{K}Kb_{i}+1$$
 
-During inference, $b_{i}$ could be obtained from output of plausibility functions using the formula of singleton belief of a class.
+During inference, $b_{i}$ could be obtained from the output of plausibility functions using the formula of singleton belief of a class.
 
 For a better plausibility function, a regularization term is added: 
 
@@ -204,24 +204,24 @@ We use weights to balance the losses. We gradually increase the effect of $L_{KL
 
 ## 2.2. Our interpretation 
 
-- !!! When we tried to trained the models from scratch, the KL loss and REG loss were started and remained as 0, causing the model to learn nothing. We investigated the reason and concluded that it is due to the very low initial outputs of the model. Since all outputs are very low and similar in the beginning, the confusion results are computed very close (or equal to) 1, which prevents the model to improve. <br> To solve this issue, we developed a method where we initially train a model with cross-entropy loss for a few epochs to get the model to have some somehow not bad initial guesses. This allowed the model to learn and improve, which yielded the results we optained. However, we don't know what exactly the authors did to overcome this issue.
+- !!! When we tried to trained the models from scratch, the KL loss and REG loss were started and remained as 0, causing the model to learn nothing. We investigated the reason and concluded that it is due to the very low initial outputs of the model. Since all outputs are very low and similar in the beginning, the confusion results are computed very close (or equal to) 1, which prevents the model from improving. <br> To solve this issue, we developed a method where we initially train a model with the cross-entropy loss for a few epochs to get the model to have some somehow not-bad initial guesses. This allowed the model to learn and improve, which yielded the results we obtained. However, we don't know what exactly the authors did to overcome this issue.
 
-- They stated that they gradually increase the effect of the KL loss term by increasing the <b>effect</b> of its coefficient by stating "Each loss term is accompanied by a balance weight, and we gradually increase the effect of KL loss through an additional annealing coefficient." rigth after eq 13 in the paper. <br> But later, they mentioned it anneals to 0. But since it is more detailed (containing the numbers), we decided to start Lambda KL as 0.05 and linearly decreased it to 0 as we approached to the last epoch. This part is mentioned in the paper as: "Specifically,
+- They stated that they gradually increase the effect of the KL loss term by increasing the <b>effect</b> of its coefficient by stating, "Each loss term is accompanied by a balance weight, and we gradually increase the effect of KL loss through an additional annealing coefficient." right after eq 13 in the paper. <br> But later, they mentioned it anneals to 0. But since it is more detailed (containing the numbers), we decided to start Lambda KL as 0.05 and linearly decreased it to 0 as we approached to the last epoch. This part is mentioned in the paper: "Specifically,
 we set the learning rate for both methods to 0.004 with a momentum of 0.9 for the batch size of 128. λKL in Eq. 13 anneals to 0 with epochs with the maximum coefficient of 0.05, and λreg is set to 1." in the implementation details part of the paper.
 
-- Also, they did not declare the optimized they use (SGD, Adam, etc.) in the paper. So, we decided to use SGD with the stated larning rate and momentum. We also added a weight decay and used cosine annealing learning rate scheduler.
+- Also, they did not declare the optimizer they used (SGD, Adam, etc.) in the paper. So, we decided to use SGD with the stated learning rate and momentum. We also added a weight decay and used a cosine annealing learning rate scheduler.
 
 
-- They did not explicitly mention how they calculate the KL loss in the paper. So, we decided to follow the cited EDL paper's code in the original paper as they stated they followed it too.
+- They did not explicitly mention how they calculated the KL loss in the paper. So, we decided to follow the cited EDL paper's code in the original paper, as they stated they followed it, too.
 
 
-- For the results plots in the Figure 5 of the paper, the curves are too noisy (almost like hand drawn). We could not clearly interpret the "Average predictions" term, and used the values from 0 to number of classes since it aligned with the plot.
+- For the results plots in Figure 5 of the paper, the curves are too noisy (almost like hand-drawn). We could not clearly interpret the "Average predictions" term and used the values from 0 to a number of classes since it aligned with the plot.
 
 
-- For the toy 2-D dataset experiments, they did not specify any details for training. Also, picking the distance=9 and std=4 for constructing the dataset resulted a different dataset than the one in the paper. So, we decided to use a smaller std for the toy experiments. Also, the MLP structure that we used yielded results with high plausibility even when the points are too far from the samples (except they are nearly equally distant to the data centers.)
+- For the toy 2-D dataset experiments, they did not specify any details for training. Also, picking the distance=9 and std=4 for constructing the dataset resulted in a different dataset than the one in the paper. So, we decided to use a smaller std for the toy experiments. Also, the MLP structure that we used yielded results with high plausibility even when the points were too far from the samples (except they were nearly equally distant to the data centers.)
 
 
-- We also questioned the AUROC scored stated in the paper since they seemed too low to us. We tried both sklearn and torcheval libraries to calculate the AUROC scores but we always get much higher AUROC scores.
+- We also questioned the AUROC scores stated in the paper since they seemed too low to us. We tried both sklearn and torcheval libraries to calculate the AUROC scores but we always get much higher AUROC scores.
 
 
 
@@ -239,7 +239,7 @@ The CIFAR-10 dataset consists of 60,000 32x32 color images in 10 classes, with 6
 
 The CIFAR-100 dataset is just like the CIFAR-10, except it has 100 classes containing 600 images each. There are 500 training images and 100 testing images per class. The 100 classes in the CIFAR-100 are grouped into 20 coarse classes.
 
-This focus will allow us to thoroughly investigate and understand the performance of the proposed method on these particular datasets. We have not made any changes to the original experimental setup and have followed the same procedures and settings as described in the paper to ensure the accuracy of our results. Our goal is to verify the effectiveness of the proposed method as presented in the original paper.
+This focus will allow us to thoroughly investigate and understand the performance of the proposed method on these particular datasets. We have not made any changes to the original experimental setup and have followed the same procedures and settings as described in the paper to ensure the accuracy of our results. Our goal is to verify the effectiveness of the proposed method, as presented in the original paper.
 
 ## 3.2. Running the code
 
@@ -279,7 +279,7 @@ This focus will allow us to thoroughly investigate and understand the performanc
 python main.py --loss CrossEntropyLoss --save_path ./results/CIFAR10/exp1/ --dataset CIFAR10 --max_num_epochs 200
 ```
 
-##### Train a model with CustomLoss on CIFAR10 dataset for 200 epochs. 
+##### Train a model with CustomLoss on CIFAR10 dataset for 200 epochs.  (Start with 2-3 pretrained model)
 ```bash
 python main.py --loss CustomLoss --save_path ./results/CIFAR10/exp2/ --model_path ./results/CIFAR10/exp1/checkpoint_1000.pth --dataset CIFAR10 --resume --max_num_epochs 200
 ```
@@ -289,7 +289,7 @@ python main.py --loss CustomLoss --save_path ./results/CIFAR10/exp2/ --model_pat
 python main.py --loss CrossEntropyLoss --save_path ./results/CIFAR100/exp1/ --dataset CIFAR100 --max_num_epochs 200
 ```
 
-##### Train a model with CustomLoss on CIFAR100 dataset for 200 epochs
+##### Train a model with CustomLoss on CIFAR100 dataset for 200 epochs (Start with 2-3 pretrained model (may be not enough for CIFAR100))
 ```bash
 python main.py --loss CustomLoss --save_path ./results/CIFAR100/exp2/ --model_path ./results/CIFAR100/exp1/checkpoint_1000.pth --dataset CIFAR100 --resume --max_num_epochs 200
 ```
@@ -300,11 +300,11 @@ The model trained on the CIFAR10 and CIFAR100 datasets for 200 epochs can be fou
 
 ## 3.3. Results
 
-All of our results can be re-implemented with loading a pretrained model using the "results.ipynb" jupyter notebook. The results are in the notebook with precalculated values and plots.
+All of our declared results can be derived again by loading a pre-trained model using the "results.ipynb" jupyter notebook. The results are in the notebook with precalculated values and plots.
 
-For CIFAR-10, we have obtained a comparable test accuracy of 93.9% and an AUROC score of 99.63%, which is much higher that the AUROC stated in the paper's Table 1. We have used sklearn's auroc metric and could not figured out how the authors calculated it to get these amounts.
+For CIFAR-10, we have obtained a comparable test accuracy of 93.9% and an AUROC score of 99.63%, which is much higher than the AUROC stated in the paper's Table 1. We have used sklearn's auroc metric and could not figure out how the authors calculated it to get these amounts.
 
-We calculated the Precision and Recall vs num of predictions plots for the CIFAR-10 dataset.
+We calculated the "Precision and Recall vs number of predictions" plots for the CIFAR-10 dataset.
 
 Our plots:
 
@@ -324,7 +324,7 @@ Papers plots (from Figure 5):
 
 <br>
 
-We also calculated some random samples and picked the ones with high confusion or high ignorance like the original paper (from Figure 7). The main purpose is to show the effectiveness of the method in handling uncertainties.
+We also calculated some random samples and picked the ones with high confusion or high ignorance, like the original paper (from Figure 7). The main purpose is to show the effectiveness of the method in handling uncertainties.
 
 
 <p align="center">
@@ -344,7 +344,7 @@ Our comprehensive results showing 15 examples of high confusion and 15 examples 
 
 
 
-Also, the plots from our toy experiments training with 4 classes is below:
+Also, the plots from our toy experiments training with 4 classes are below:
 
 <p align="center">
   <img src="figures/toy_results.png" alt="cifar10_sample_output" width="90%">
@@ -352,17 +352,19 @@ Also, the plots from our toy experiments training with 4 classes is below:
   <em>Our 2-D toy dataset experiment results for measuring uncertainity</i>.</em>
 </p>
 
-We deeply thought on why we could not achieved the ignorance on distant points, and decided that the MLP structure we used produces high plausibility values for the points that are too far from the data centers. Maybe, the authors used a different MLP.
+We deeply thought about why we could not achieve the ignorance on distant points and decided that the MLP structure we used produces high plausibility values for the points that are too far from the data centers. Maybe, the authors used a different MLP.
 
 # 4. Conclusion
 
-To conclude, the paper titled "Flexible Visual Recognition by Evidential Modeling of Confusion and Ignorance" achieves classifying confused images in a seperate way, as well as providing "ignorance" information to detect out-of-distribution data. The method proposed in the paper is a novel approach to handle uncertainties in visual recognition systems using the theory of Subjective Logic. The method allows the system to express uncertainty and source trust explicitly, which is crucial in real-world scenarios where the input can be unpredictable and varied. 
+To conclude, the paper titled "Flexible Visual Recognition by Evidential Modeling of Confusion and Ignorance" classifies confused images in a separate way and provides "ignorance" information to detect out-of-distribution data. The method proposed in the paper is a novel approach to handling uncertainties in visual recognition systems using the theory of Subjective Logic. The method allows the system to express uncertainty and source trust explicitly, which is crucial in real-world scenarios where the input can be unpredictable and varied. 
 
-Regarding our implementation, we could achieve comparable quantitative and qualitative results with the original paper in the CIFAR10 dataset. However, we question how model can learn initially with this loss setup when it produces very low and similar outputs.
+The interpretation of dividing the uncertainty into confusion and ignorance and the method to handle these uncertainties are very exiciting and promising. As it can be seen in the results, when the confusion is high, model can made to predict multiple classes. And when the ignorance is high, we sometimes can't even trust the 2. highest plausibility class, which may be a good sign to reject any prediction in case of out-of-distribution data is possible.
 
-To solve this issue, we tried a creative approach of pretraining the model with 5-20 epochs with cross-entropy loss, which allowed the model to learn and improve for CIFAR10 dataset. But in the CIFAR100 dataset, it is very hard to get a good initial guess for 100 classes even with a small amount of pretraining.
+Regarding our implementation, we could achieve comparable quantitative and qualitative results with the original paper in the CIFAR10 dataset. However, we question how the model can learn initially with this loss setup when it produces very low and similar outputs.
 
-However, the interpretation of dividing the uncertainty into confusion and ignorance and the method to handle these uncertainties are very exiciting and promising. As it can be seen in the results, when the confusion is high, model can made to predict multiple classes. And when the ignorance is high, we sometimes can't even trust the 2. highest plausibility class, which may be a good sign to reject any prediction in case of out-of-distribution data is possible.
+To solve this issue, we tried a creative approach of pre-training the model with 5-20 epochs with cross-entropy loss, which allowed the model to learn and improve for the CIFAR10 dataset. However, in the CIFAR100 dataset, it is very hard to get a good initial guess for 100 classes, even with a non-small amount of pretraining.
+
+
 
 # 5. References
 
