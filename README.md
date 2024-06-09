@@ -231,7 +231,7 @@ we set the learning rate for both methods to 0.004 with a momentum of 0.9 for th
 
 In the original paper, a variety of experiments were conducted to test the proposed method's effectiveness in handling uncertainties in visual recognition systems. The experiments were designed to demonstrate the separation of two sources of uncertainty, indicate the correct class on misclassified samples with estimated confusion, and apply ignorance to compare with other methods on the task open-set detection.
 
-The authors used the ResNet-18 as the backbone for their experiments, except on synthetic data and open-set detection. The dimension of the extracted feature was set to 512. For the proposed method, they applied the sigmoid activation on the last linear layer to work as multiple plausibility functions. They found both EDL and their method to be more sensitive to the learning rate. Specifically, they set the learning rate for both methods to 0.004 with a momentum of 0.9 for the batch size of 128. The $\lambda_{KL}$ in Eq. 13 annealed to 0 with epochs with the maximum coefficient of 0.05, and $\lambda_{reg}$ was set to 1.
+The authors used the ResNet-18 as the backbone for their experiments, except on synthetic data and open-set detection. The dimension of the extracted feature was set to 512. For the proposed method, they applied the sigmoid activation on the last linear layer to work as multiple plausibility functions. They found both EDL and their method to be more sensitive to the learning rate. Specifically, they set the learning rate for both methods to 0.004 with a momentum of 0.9 for the batch size of 128. The $\lambda_{KL}$ in Eq. 13 annealed to 0 with epochs with the maximum coefficient of 0.05, and $\lambda_{reg}$ was set to 1. Also, we decided to use SGD as it was not explicitly stated in the paper. We trained the models with the loss function proposed in the paper for 200 epochs.
 
 For our study, we have decided to focus specifically on the CIFAR-10 and CIFAR-100 datasets for the open-set detection task. These datasets are directly obtained from $\texttt{torchvision.datasets.CIFAR10}$ and $\texttt{torchvision.datasets.CIFAR100}$ respectively.
 
@@ -304,6 +304,8 @@ All of our declared results can be derived again by loading a pre-trained model 
 
 For CIFAR-10, we have obtained a comparable test accuracy of 93.9% and an AUROC score of 99.63%, which is much higher than the AUROC stated in the paper's Table 1. We have used sklearn's auroc metric and could not figure out how the authors calculated it to get these amounts.
 
+Note: For the CIFAR100 training, even when we tried to train the model with our loss using 10-40 epochs pre-trained (with cross-entropy) model, it wasn't enough to start the training. Hence, we couldn't put our accuracy and AUROC results for CIFAR100. The uploaded pre-trained model for CIFAR100 has a purpose for the ones who want to experiment with it.
+
 We calculated the "Precision and Recall vs number of predictions" plots for the CIFAR-10 dataset.
 
 Our plots:
@@ -356,7 +358,6 @@ We deeply thought about why we could not achieve the ignorance on distant points
 
 <br>
 
-Note: For the CIFAR100 training, even when we tried to train the model with our loss using 10-40 epochs pre-trained (with cross-entropy) model, it wasn't enough to start the training. Hence, we couldn't put our accuracy and AUROC results for CIFAR100. The uploaded pre-trained model for CIFAR100 has a purpose for the ones who want to experiment with it.
 
 # 4. Conclusion
 
