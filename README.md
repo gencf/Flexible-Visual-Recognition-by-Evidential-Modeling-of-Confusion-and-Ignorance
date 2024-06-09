@@ -354,6 +354,10 @@ Also, the plots from our toy experiments training with 4 classes are below:
 
 We deeply thought about why we could not achieve the ignorance on distant points and decided that the MLP structure we used produces high plausibility values for the points that are too far from the data centers. Maybe, the authors used a different MLP.
 
+<br>
+
+Note: For the CIFAR100 training, even when we tried to train the model with our loss using 10-40 epochs pre-trained (with cross-entropy) model, it wasn't enough to start the training. Hence, we couldn't put our accuracy and AUROC results for CIFAR100. The uploaded pre-trained model for CIFAR100 has a purpose for the ones who want to experiment with it.
+
 # 4. Conclusion
 
 To conclude, the paper titled "Flexible Visual Recognition by Evidential Modeling of Confusion and Ignorance" classifies confused images in a separate way and provides "ignorance" information to detect out-of-distribution data. The method proposed in the paper is a novel approach to handling uncertainties in visual recognition systems using the theory of Subjective Logic. The method allows the system to express uncertainty and source trust explicitly, which is crucial in real-world scenarios where the input can be unpredictable and varied. 
