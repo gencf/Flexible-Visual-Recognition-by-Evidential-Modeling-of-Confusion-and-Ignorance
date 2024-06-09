@@ -204,50 +204,24 @@ We use weights to balance the losses. We gradually increase the effect of $L_{KL
 
 ## 2.2. Our interpretation 
 
-!!! When we tried to trained the models from scratch, the KL loss and REG loss were started and remained as 0, causing the model to learn nothing. We investigated the reason and concluded that it is due to the very low initial outputs of the model. Since all outputs are very low and similar in the beginning, the confusion results are computed very close (or equal to) 1, which prevents the model to improve.
+- !!! When we tried to trained the models from scratch, the KL loss and REG loss were started and remained as 0, causing the model to learn nothing. We investigated the reason and concluded that it is due to the very low initial outputs of the model. Since all outputs are very low and similar in the beginning, the confusion results are computed very close (or equal to) 1, which prevents the model to improve. <br> To solve this issue, we developed a method where we initially train a model with cross-entropy loss for a few epochs to get the model to have some somehow not bad initial guesses. This allowed the model to learn and improve, which yielded the results we optained. However, we don't know what exactly the authors did to overcome this issue.
 
-To solve this issue, we developed a method where we initially train a model with cross-entropy loss for a few epochs to get the model to have some somehow not bad initial guesses. This allowed the model to learn and improve, which yielded the results we optained. However, we don't know what exactly the authors did to overcome this issue.
+- They stated that they gradually increase the effect of the KL loss term by increasing the <b>effect</b> of its coefficient by stating "Each loss term is accompanied by a balance weight, and we gradually increase the effect of KL loss through an additional annealing coefficient." rigth after eq 13 in the paper. <br> But later, they mentioned it anneals to 0. But since it is more detailed (containing the numbers), we decided to start Lambda KL as 0.05 and linearly decreased it to 0 as we approached to the last epoch. This part is mentioned in the paper as: "Specifically,
+we set the learning rate for both methods to 0.004 with a momentum of 0.9 for the batch size of 128. λKL in Eq. 13 anneals to 0 with epochs with the maximum coefficient of 0.05, and λreg is set to 1." in the implementation details part of the paper.
 
-<br> <br>
-
-They stated that they gradually increase the effect of the KL loss term by increasing the <b>effect</b> of its coefficient:
-<div style="text-align: center;">
-    <figure>
-        <img src="./figures/losses.png" alt="losses" style="width:1200px; height:auto;">
-        <figcaption> Lambda KL explanation </figcaption>
-    </figure>
-</div>
-But later, they mentioned it anneals to 0. But since it is more detailed (containing the numbers), we decided to start Lambda KL as 0.05 and linearly decreased it to 0 as we approached to the last epoch.
-<div style="text-align: center;">
-    <figure>
-        <img src="./figures/details.png" alt="details" style="width:1200px; height:auto;">
-        <figcaption> Contradicting Lambda KL explanation. </figcaption>
-    </figure>
-</div>
-Also, they did not declare the optimized they use (SGD, Adam, etc.) in the paper. So, we decided to use SGD with the stated larning rate and momentum. We also added a weight decay and used cosine annealing learning rate scheduler.
-
-<br> <br>
-They did not explicitly mention how they calculate the KL loss in the paper. So, we decided to follow the cited paper's formula:
-
-<div style="text-align: center;">
-    <figure>
-        <img src="./figures/KL_loss.png" alt="KL_loss" style="width:1200px; height:auto;">
-        <figcaption> KL_loss formula in the paper </figcaption>
-    </figure>
-</div>
-
-<br> <br>
-
-For the results plots in the Figure 5 of the paper, the curves are too noisy (almost like hand drawn). We could not clearly interpret the "Average predictions" term, and used the values from 0 to number of classes since it aligned with the plot.
+- Also, they did not declare the optimized they use (SGD, Adam, etc.) in the paper. So, we decided to use SGD with the stated larning rate and momentum. We also added a weight decay and used cosine annealing learning rate scheduler.
 
 
-<br> <br>
+- They did not explicitly mention how they calculate the KL loss in the paper. So, we decided to follow the cited EDL paper's code in the original paper as they stated they followed it too.
 
-For the toy 2-D dataset experiments, they did not specify any details for training. Also, picking the distance=9 and std=4 for constructing the dataset resulted a different dataset than the one in the paper. So, we decided to use a smaller std for the toy experiments. Also, the MLP structure that we used yielded results with high plausibility even when the points are too far from the samples (except they are nearly equally distant to the data centers.)
 
-<br> <br>
+- For the results plots in the Figure 5 of the paper, the curves are too noisy (almost like hand drawn). We could not clearly interpret the "Average predictions" term, and used the values from 0 to number of classes since it aligned with the plot.
 
-We also questioned the AUROC scored stated in the paper since they seemed too low to us. We tried both sklearn and torcheval libraries to calculate the AUROC scores but we always get much higher AUROC scores.
+
+- For the toy 2-D dataset experiments, they did not specify any details for training. Also, picking the distance=9 and std=4 for constructing the dataset resulted a different dataset than the one in the paper. So, we decided to use a smaller std for the toy experiments. Also, the MLP structure that we used yielded results with high plausibility even when the points are too far from the samples (except they are nearly equally distant to the data centers.)
+
+
+- We also questioned the AUROC scored stated in the paper since they seemed too low to us. We tried both sklearn and torcheval libraries to calculate the AUROC scores but we always get much higher AUROC scores.
 
 
 
@@ -334,68 +308,80 @@ We calculated the Precision and Recall vs num of predictions plots for the CIFAR
 
 Our plots:
 
-<div style="text-align: center;">
-    <figure>
-        <img src="./figures/cifar10_precision_recall.png" alt="cifar10_precision_recall" style="width:1200px; height:auto;">
-        <figcaption> Our plots </figcaption>
-    </figure>
-</div>
+<p align="center">
+  <img src="figures/cifar10_precision_recall.png" alt="cifar10_precision_recall" width="90%">
+  <br>
+  <em>Our plots</i>.</em>
+</p>
 
 Papers plots (from Figure 5):
 
-<div style="text-align: center;">
-    <figure>
-        <img src="./figures/cifar10_precision_recall_from_paper.png" alt="cifar10_precision_recall_from_paper" style="width:1200px; height:auto;">
-        <figcaption> The plots from the paper Fig. 5 </figcaption>
-    </figure>
-</div>
+<p align="center">
+  <img src="figures/cifar10_precision_recall_from_paper.png" alt="cifar10_precision_recall_from_paper" width="90%">
+  <br>
+  <em>The original plots (from the paper's fig. 5)</i>.</em>
+</p>
 
-<br> <br>
+<br>
 
 We also calculated some random samples and picked the ones with high confusion or high ignorance like the original paper (from Figure 7). The main purpose is to show the effectiveness of the method in handling uncertainties.
 
 
-
-<div style="text-align: center;">
-    <figure>
-        <img src="./figures/qualitative_from_paper.png" alt="qualitative_from_paper" style="width:1200px; height:auto;">
-        <figcaption> Qualitative results from paper (from fig 7.) </figcaption>
-    </figure>
-</div>
-
+<p align="center">
+  <img src="figures/qualitative_from_paper.png" alt="qualitative_from_paper" width="90%">
+  <br>
+  <em>Qualitative results (from the paper fig. 7)</i>.</em>
+</p>
 
 
 Our comprehensive results showing 15 examples of high confusion and 15 examples of high ignorance are as follows:
 
-<div style="text-align: center;">
-    <figure>
-        <img src="./figures/cifar10_sample_output.png" alt="cifar10_sample_output" style="width:1200px; height:auto;">
-        <figcaption> Qualitative results from our training  </figcaption>
-    </figure>
-</div>
+<p align="center">
+  <img src="figures/cifar10_sample_output.png" alt="cifar10_sample_output" width="90%">
+  <br>
+  <em>Qualitative results from our training</i>.</em>
+</p>
+
 
 
 Also, the plots from our toy experiments training with 4 classes is below:
-<div style="text-align: center;">
-    <figure>
-        <img src="./figures/toy_results.png" alt="cifar10_sample_output" style="width:1200px; height:auto;">
-        <figcaption> Qualitative results from our training  </figcaption>
-    </figure>
-</div>
+
+<p align="center">
+  <img src="figures/toy_results.png" alt="cifar10_sample_output" width="90%">
+  <br>
+  <em>Our 2-D toy dataset experiment results for measuring uncertainity</i>.</em>
+</p>
 
 We deeply thought on why we could not achieved the ignorance on distant points, and decided that the MLP structure we used produces high plausibility values for the points that are too far from the data centers. Maybe, the authors used a different MLP.
 
 # 4. Conclusion
 
-To conclude, we could achieve comparable quantitative and qualitative results with the original paper in the CIFAR10 dataset. However, we question how model can learn initially with this loss setup when it produces very low and similar outputs.
+To conclude, the paper titled "Flexible Visual Recognition by Evidential Modeling of Confusion and Ignorance" achieves classifying confused images in a seperate way, as well as providing "ignorance" information to detect out-of-distribution data. The method proposed in the paper is a novel approach to handle uncertainties in visual recognition systems using the theory of Subjective Logic. The method allows the system to express uncertainty and source trust explicitly, which is crucial in real-world scenarios where the input can be unpredictable and varied. 
 
-To solve this issue, we tried pretraining the model with 5-20 epochs with cross-entropy loss, which allowed the model to learn and improve for CIFAR10 dataset. But in the CIFAR100 dataset, we could not make the model learn and improve since it is very hard to get a good initial guess for 100 classes even with a small amount of pretraining.
+Regarding our implementation, we could achieve comparable quantitative and qualitative results with the original paper in the CIFAR10 dataset. However, we question how model can learn initially with this loss setup when it produces very low and similar outputs.
+
+To solve this issue, we tried a creative approach of pretraining the model with 5-20 epochs with cross-entropy loss, which allowed the model to learn and improve for CIFAR10 dataset. But in the CIFAR100 dataset, it is very hard to get a good initial guess for 100 classes even with a small amount of pretraining.
 
 However, the interpretation of dividing the uncertainty into confusion and ignorance and the method to handle these uncertainties are very exiciting and promising. As it can be seen in the results, when the confusion is high, model can made to predict multiple classes. And when the ignorance is high, we sometimes can't even trust the 2. highest plausibility class, which may be a good sign to reject any prediction in case of out-of-distribution data is possible.
 
 # 5. References
 
-@TODO: Provide your references here.
+- Fan, L., Liu, B., Li, H., Wu, Y., & Hua, G. (2023, September 14). Flexible visual recognition by evidential modeling of confusion and ignorance. arXiv.org. https://arxiv.org/abs/2309.07403
+
+- Subjective logic. (n.d.). springerprofessional.de. https://www.springerprofessional.de/en/subjective-logic/10991958
+
+- Sensoy, M., Kaplan, L., & Kandemir, M. (2018, June 5). Evidential deep learning to quantify classification uncertainty. arXiv.org. https://arxiv.org/abs/1806.01768
+
+- Krizhevsky, A. (2009). Learning Multiple Layers of Features from Tiny Images. https://www.semanticscholar.org/paper/Learning-Multiple-Layers-of-Features-from-Tiny-Krizhevsky/5d90f06bb70a0a3dced62413346235c02b1aa086
+
+- Amini, A., Schwarting, W., Soleimany, A., & Rus, D. (2019, October 7). Deep evidential regression. arXiv.org. https://arxiv.org/abs/1910.02600
+
+- Bao, W., Yu, Q., & Kong, Y. (2021, July 21). Evidential Deep learning for open set action recognition. arXiv.org. https://arxiv.org/abs/2107.10161
+
+- Corbière, C., Lafon, M., Thome, N., Cord, M., & Pérez, P. (2021, September 23). Beyond First-Order Uncertainty Estimation with Evidential Models for Open-World Recognition. https://cnam.hal.science/hal-03347628/
+
+- Barnett, J. A. (2008). Computational methods for a mathematical theory of evidence. In Springer eBooks (pp. 197–216). https://doi.org/10.1007/978-3-540-44792-4_8
+
 
 # Contact
 
