@@ -304,7 +304,7 @@ All of our declared results can be derived again by loading a pre-trained model 
 
 For CIFAR-10, we have obtained a comparable test accuracy of 93.9% and an AUROC score of 99.63%, which is much higher than the AUROC stated in the paper's Table 1. We have used sklearn's auroc metric and could not figure out how the authors calculated it to get these amounts.
 
-Note: For the CIFAR100 training, even when we tried to train the model with our loss using 10-40 epochs pre-trained (with cross-entropy) model, it wasn't enough to start the training. Hence, we couldn't put our accuracy and AUROC results for CIFAR100. The uploaded pre-trained model for CIFAR100 has a purpose for the ones who want to experiment with it.
+Note: For the CIFAR100 training, even when we tried to train the model with our loss using from 2 to 40 epochs pre-trained (with cross-entropy) model, it wasn't enough to start the training. Hence, we couldn't put our accuracy and AUROC results for CIFAR100. The uploaded pre-trained model for CIFAR100 has a purpose for the ones who want to experiment with it.
 
 We calculated the "Precision and Recall vs number of predictions" plots for the CIFAR-10 dataset.
 
@@ -367,7 +367,7 @@ The interpretation of dividing the uncertainty into confusion and ignorance and 
 
 Regarding our implementation, we could achieve comparable quantitative and qualitative results with the original paper in the CIFAR10 dataset. However, we question how the model can learn initially with this loss setup when it produces very low and similar outputs.
 
-To solve this issue, we tried a creative approach of pre-training the model with 5-20 epochs with cross-entropy loss, which allowed the model to learn and improve for the CIFAR10 dataset. However, in the CIFAR100 dataset, it is very hard to get a good initial guess for 100 classes, even with a non-small amount of pretraining.
+To solve this issue, we tried a creative approach of pre-training the model with 2-3 epochs with cross-entropy loss, which allowed the model to learn and improve for the CIFAR10 dataset. However, in the CIFAR100 dataset, it is very hard to get a good initial guess for 100 classes, even with a non-small amount of pretraining.
 
 
 
